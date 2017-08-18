@@ -1,16 +1,16 @@
-
 let nextId = 1;
 
 /**
  * Create a process
- * 
- * @param {Array} program 
- * @param {Number} time 
- * @param {Process} parent 
  * @return {Process} 
  */
-export function process(program = [], time = 0, parent = null) {
-  const proc = (lib = {}, maxTime = Infinity, maxOps = 1000) => {
+export function process(props) {
+  const proc = Object.assign(
+    { id: nextId++, time: 0, context: {}, stack: [], operations: [] },
+    props
+  );
+
+  proc.exec = (lib = {}, maxTime = Infinity, maxOps = 1000) => {
     while (proc.time < maxTime && --maxOps && proc.operations.length) {
       const op = proc.operations.pop();
       if (typeof op === "function") op(proc, lib);
@@ -19,24 +19,24 @@ export function process(program = [], time = 0, parent = null) {
     return proc;
   };
 
-  proc.id = nextId++;
-  proc.time = time;
-  proc.parent = parent;
-  proc.stack = [];
-  proc.context = null;
-  proc.operations = program.slice().reverse();
+  proc.load = program => {
+    let i = program.length;
+    while (i--) {
+      proc.operations.push(program[i]);
+    }
+    return proc;
+  };
+
+  proc.call = (lib, name) => {
+    const fn = lib[name];
+    if (typeof fn === "function") {
+      fn(proc, lib);
+    } else {
+      console.warn(name + " is not a function.");
+    }
+  };
 
   return proc;
-}
-
-// PRIVATE: invoke a function from a library
-function invoke (proc, name, lib) {
-  const fn = lib[name];
-  if (typeof fn === 'function') {
-    fn(proc, lib);
-  } else {
-    console.warn(name + ' is not a function.');
-  }
 }
 
 export const lib = {
@@ -46,37 +46,62 @@ export const lib = {
    * @example
    * [0.5, '@wait']
    */
-  wait: (proc) => {
+  wait: proc => {
     const delay = proc.stack.pop();
     proc.time += delay;
   },
 
   /**
-   * @call: invoke the function with the name specified in the stack
+   * @call: pop a name of a function from the stack and invoke it
    * 
    * @example
    * ['pluck', '@call']
    */
   call: (proc, lib) => {
     const name = proc.stack.pop();
-    invoke(proc, name, lib);
+    proc.call(lib, name);
   },
 
   /**
-   * @defn: define a function
+   * __@defn__: define a function
+   * @param [array] function body
+   * @param [string] name of the function
    * 
    * @example
-   * [['@wait', '@pluck'], 'dnote', 0.5, '@dnote']
+   * [[440, '@set-freq', '@pluck'], 'pluck-A4', '@defn']
    */
   defn: (proc, lib) => {
     const name = proc.stack.pop();
     const program = proc.stack.pop();
-    lib[name] = (proc) => {
-      let i = program.length
-      while (i--) proc.operations.push(program[i]);
+    lib[name] = proc => proc.load(program);
+  },
+
+  /**
+   * @let
+   */
+  let: proc => {
+    const key = proc.stack.pop();
+    const value = proc.stack.pop();
+    if (!proc.context) proc.context = {};
+    proc.context[key] = value;
+  },
+
+  /**
+   * @get: get a value from context and push into the stack
+   * @param [key] the key of the context value
+   * 
+   * @example
+   * ['freq', '@get']
+   */
+  get: proc => {
+    const key = proc.stack.pop();
+    let current = proc;
+    while (current.context[key] === undefined && current.parent) {
+      current = current.parent;
     }
+    proc.stack.push(current.context[key]);
   }
-}
+};
 
 /**
  * A reference clock. A clock is a function that accepts a callback
@@ -85,10 +110,11 @@ export const lib = {
  * @param {Number} interval - the interval of the clock in seconds
  * @return {Function} 
  */
-export const jsclock = (interval = 0.1) => (resume) => {
-  const id = setInterval(() => resume(interval), interval * 1000)
-  return () => clearInterval(id);
-}
+export const jsclock = (interval = 0.1) =>
+  resume => {
+    const id = setInterval(() => resume(interval), interval * 1000);
+    return () => clearInterval(id);
+  };
 
 /**
  * Create a scheduler
@@ -96,31 +122,29 @@ export const jsclock = (interval = 0.1) => (resume) => {
  * @param {Object} library - the library
  * @param {Function} clock 
  */
-export function scheduler (baseLib = {}, clock = jsclock()) {
+export function scheduler(baseLib = {}, clock = jsclock()) {
   let time = 0;
   const queue = [];
 
   // add scheduling functions to library
-  const lib = Object.assign(baseLib, {
-
-  });
+  const lib = Object.assign(baseLib, {});
 
   // insert a process in a priority queue
-  function schedule (proc) {
+  function schedule(proc) {
     let i = queue.length - 1;
     while (i >= 0 && queue[i].time < proc.time) {
       i--;
     }
     queue.splice(i + 1, 0, proc);
-    return proc
+    return proc;
   }
 
   // resume process for a duration (expressed in seconds)
-  function resume (duration, limit = 1000) {
+  function resume(duration, limit = 1000) {
     const endsAt = time + duration;
     let proc = queue.pop();
-    while(proc && proc.time < endsAt && limit--) {
-      proc(lib, endsAt);
+    while (proc && proc.time < endsAt && limit--) {
+      proc.exec(lib, endsAt);
       if (proc.operations.length) schedule(proc);
       proc = queue.pop();
     }
@@ -129,17 +153,14 @@ export function scheduler (baseLib = {}, clock = jsclock()) {
   }
 
   // API: return a function to run programs
-  function run (program, delay) {
-    return schedule(process(program, time));
+  function run(program, delay) {
+    return schedule(process({ time }).load(program));
   }
   run.stop = clock(resume);
-  run.lib = lib
+  run.lib = lib;
   return run;
 }
 
-export function compiler () {
-
-  return function compile () {
-
-  }
+export function compiler() {
+  return function compile() {};
 }
