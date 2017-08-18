@@ -45,7 +45,8 @@ export function process(props) {
 
 export const lib = {
   /**
-   * @wait
+   * __@wait__: wait
+   * @param [number] delay - the time to wait in beats
    * 
    * @example
    * [0.5, '@wait']
@@ -56,7 +57,8 @@ export const lib = {
   },
 
   /**
-   * @call: pop a name of a function from the stack and invoke it
+   * __@call__: invoke a function
+   * @param [string] name - the function name
    * 
    * @example
    * ['pluck', '@call']
@@ -175,6 +177,25 @@ export function scheduler(baseLib = {}, clock = jsclock()) {
   return run;
 }
 
+const OPERATOR = /^@([^-]+)(-.*)?$/;
 export function compiler() {
-  return function compile() {};
+  return function compile(program) {
+    let m;
+    return program.reduce(
+      (compiled, op) => {
+        if (Array.isArray(op)) {
+          compiled.push(compile(op));
+        } else if ((m = OPERATOR.exec(op))) {
+          if (m[2]) compiled.push(m[2].slice(1));
+          const name = m[1];
+          const fn = lib[name] || ((proc, lib) => lib[name](proc, lib));
+          compiled.push(fn);
+        } else {
+          compiled.push(op);
+        }
+        return compiled;
+      },
+      []
+    );
+  };
 }
