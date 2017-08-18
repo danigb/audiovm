@@ -5,10 +5,14 @@ let nextId = 1;
  * @return {Process} 
  */
 export function process(props) {
-  const proc = Object.assign(
-    { id: nextId++, time: 0, context: {}, stack: [], operations: [] },
-    props
-  );
+  const proc = {
+    id: nextId++,
+    time: 0,
+    context: {},
+    stack: [],
+    operations: []
+  };
+  Object.assign(proc, props);
 
   proc.exec = (lib = {}, maxTime = Infinity, maxOps = 1000) => {
     while (proc.time < maxTime && --maxOps && proc.operations.length) {
@@ -100,6 +104,16 @@ export const lib = {
       current = current.parent;
     }
     proc.stack.push(current.context[key]);
+  },
+
+  set: proc => {
+    const key = proc.stack.pop();
+    const value = proc.stack.pop();
+    let current = proc;
+    while (current.context[key] === undefined && current.parent) {
+      current = current.parent;
+    }
+    current.context[key] = value;
   }
 };
 
