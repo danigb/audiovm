@@ -1,4 +1,4 @@
-import { scheduler, clock } from "..";
+import { scheduler } from "..";
 import stdlib from "../src/library/stdlib";
 
 jest.useFakeTimers();
@@ -12,7 +12,7 @@ describe("scheduler", () => {
   it("runs a program in time", () => {
     const output = logger();
 
-    const run = scheduler(stdlib, clock(0.3));
+    const run = scheduler(stdlib);
     run([0.5, "@wait", "A", "@log"]);
     jest.runTimersToTime(100);
     expect(output).toEqual([]);
