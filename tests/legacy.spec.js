@@ -7,6 +7,19 @@ describe("legacy transpiler", () => {
     expect(transpile(before)).toEqual(after);
   });
 
+  describe("renames", () => {
+    it("transforms @map", () => {
+      const before = [1, 2, 3, 4, "@map"];
+      const after = [1, 2, 3, 4, "@scale-lin"];
+      expect(transpile(before)).toEqual(after);
+    });
+    it("transform @midi", () => {
+      const before = ["@note", "@note-on", "@note-off", "@cc"];
+      const after = ["@midi:note", "@midi:noteon", "@midi:noteoff", "@midi:cc"];
+      expect(transpile(before)).toEqual(after);
+    });
+  });
+
   describe("right side operations", () => {
     it("transforms @loop", () => {
       const before = ["@loop", ["@pluck", [1, "@wait"]]];

@@ -1,10 +1,27 @@
 const TO_REMOVE = "REMOVE";
 
-const consume = (array, index) => {
+const remove = (array, index) => {
   const value = array[index];
   array[index] = TO_REMOVE;
   return value;
 };
+
+const REPLACEMENTS = {
+  "@map": "@scale-lin",
+  "@note": "@midi:note",
+  "@note-on": "@midi:noteon",
+  "@note-off": "@midi:noteoff",
+  "@cc": "@midi:cc"
+};
+const REPLACES = Object.keys(REPLACEMENTS);
+function replacements(result, op) {
+  if (REPLACES.includes(op)) {
+    result.push(REPLACEMENTS[op]);
+    return true;
+  } else {
+    return false;
+  }
+}
 
 const FREQ_AMP_NOTE_OPS = /^@(pluck)-note$/;
 function freqAmpNote(result, op) {
@@ -23,8 +40,8 @@ function freqAmpNote(result, op) {
 const LEFT_AND_RIGHT_OPS = ["@repeat", "@spawn"];
 function leftAndRightSide(result, op, index, source) {
   if (LEFT_AND_RIGHT_OPS.includes(op)) {
-    const left = consume(result, result.length - 1);
-    const right = consume(source, index + 1);
+    const left = remove(result, result.length - 1);
+    const right = remove(source, index + 1);
     result.push(transpile(right));
     result.push(left);
     result.push(op);
@@ -50,9 +67,9 @@ function rightSide(result, op, index, source) {
 const CONDITIONAL_OPS = ["@chance", "@cond"];
 function conditionals(result, op, index, source) {
   if (CONDITIONAL_OPS.includes(op)) {
-    const left = consume(result, result.length - 1);
-    const trueBranch = consume(source, index + 1);
-    const falseBranch = consume(source, index + 2);
+    const left = remove(result, result.length - 1);
+    const trueBranch = remove(source, index + 1);
+    const falseBranch = remove(source, index + 2);
     result.push(transpile(trueBranch));
     result.push(transpile(falseBranch));
     result.push(transpile(left));
@@ -63,7 +80,7 @@ function conditionals(result, op, index, source) {
   }
 }
 
-function nestedArrays(result, op, index) {
+function unnecessaryArrays(result, op) {
   if (Array.isArray(op)) {
     transpile(op).forEach(o => result.push(o));
     return true;
@@ -78,11 +95,12 @@ function bypass(result, op) {
 }
 
 const RULES = [
+  replacements,
   freqAmpNote,
   conditionals,
   leftAndRightSide,
   rightSide,
-  nestedArrays,
+  unnecessaryArrays,
   bypass
 ];
 
