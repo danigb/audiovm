@@ -54,7 +54,12 @@ export default {
   /**
    * Start a new child process that repeats forever
    */
-  "@loop": (proc, env) => {},
+  "@loop": (proc, env) => {
+    if (env.schedule) {
+      const program = proc.stack.pop();
+      env.schedule.fork(proc, [program, "@forever"]);
+    }
+  },
 
   /**
    * Stop another process

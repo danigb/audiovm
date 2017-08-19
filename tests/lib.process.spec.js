@@ -1,6 +1,9 @@
 import { process, scheduler } from "../src/vm";
 import proclib from "../src/library/process";
 
+jest.useFakeTimers();
+const wait = delay => proc => (proc.time += delay);
+const noop = () => null;
 const env = { lib: proclib };
 
 describe("process library", () => {
@@ -31,17 +34,29 @@ describe("process library", () => {
     expect(times).toEqual(33);
   });
 
-  it("@fork", () => {
-    jest.useFakeTimers();
+  test("@fork", () => {
     const s = scheduler(env);
-    const wait = delay => proc => (proc.time += delay);
-    const noop = () => null;
     s.fork(null, [[wait(10), noop], "@fork", wait(2), noop]);
+
     jest.runTimersToTime(1 * 1000);
     expect(s.processes().length).toEqual(2);
     jest.runTimersToTime(5 * 1000);
     expect(s.processes().length).toEqual(1);
     jest.runTimersToTime(12 * 1000);
     expect(s.processes().length).toEqual(0);
+  });
+
+  test("@loop", () => {
+    let count = 0;
+    const tick = () => count++;
+
+    const s = scheduler(env);
+    s.fork(null, [[tick, wait(1)], "@loop", wait(2), noop]);
+
+    jest.runTimersToTime(0.5 * 1000);
+    expect(s.processes().length).toEqual(2);
+    jest.runTimersToTime(10 * 1000);
+    expect(s.processes().length).toEqual(1);
+    expect(count).toBe(11);
   });
 });
