@@ -18,6 +18,7 @@ export function process(props) {
     while (proc.time < maxTime && --maxOps && proc.operations.length) {
       const op = proc.operations.pop();
       if (typeof op === "function") op(proc, lib);
+      else if (typeof op === 'string' && op[0] === '@') proc.call(lib, op);
       else proc.stack.push(op);
     }
     return proc;
@@ -43,81 +44,6 @@ export function process(props) {
   return proc;
 }
 
-export const lib = {
-  /**
-   * __@wait__: wait
-   * @param [number] delay - the time to wait in beats
-   * 
-   * @example
-   * [0.5, '@wait']
-   */
-  wait: proc => {
-    const delay = proc.stack.pop();
-    proc.time += delay;
-  },
-
-  /**
-   * __@call__: invoke a function
-   * @param [string] name - the function name
-   * 
-   * @example
-   * ['pluck', '@call']
-   */
-  call: (proc, lib) => {
-    const name = proc.stack.pop();
-    proc.call(lib, name);
-  },
-
-  /**
-   * __@defn__: define a function
-   * @param [array] function body
-   * @param [string] name of the function
-   * 
-   * @example
-   * [[440, '@set-freq', '@pluck'], 'pluck-A4', '@defn']
-   */
-  defn: (proc, lib) => {
-    const name = proc.stack.pop();
-    const program = proc.stack.pop();
-    lib[name] = proc => proc.load(program);
-  },
-
-  /**
-   * @let
-   */
-  let: proc => {
-    const key = proc.stack.pop();
-    const value = proc.stack.pop();
-    if (!proc.context) proc.context = {};
-    proc.context[key] = value;
-  },
-
-  /**
-   * @get: get a value from context and push into the stack
-   * @param [key] the key of the context value
-   * 
-   * @example
-   * ['freq', '@get']
-   */
-  get: proc => {
-    const key = proc.stack.pop();
-    let current = proc;
-    while (current.context[key] === undefined && current.parent) {
-      current = current.parent;
-    }
-    proc.stack.push(current.context[key]);
-  },
-
-  set: proc => {
-    const key = proc.stack.pop();
-    const value = proc.stack.pop();
-    let current = proc;
-    while (current.context[key] === undefined && current.parent) {
-      current = current.parent;
-    }
-    current.context[key] = value;
-  }
-};
 
 /**
  * A reference clock. A clock is a function that accepts a callback
@@ -126,7 +52,7 @@ export const lib = {
  * @param {Number} interval - the interval of the clock in seconds
  * @return {Function} 
  */
-export const jsclock = (interval = 0.1) =>
+export const clock = (interval = 0.1) =>
   resume => {
     const id = setInterval(() => resume(interval), interval * 1000);
     return () => clearInterval(id);
@@ -138,7 +64,7 @@ export const jsclock = (interval = 0.1) =>
  * @param {Object} library - the library
  * @param {Function} clock 
  */
-export function scheduler(baseLib = {}, clock = jsclock()) {
+export function scheduler(baseLib = {}, start = clock()) {
   let time = 0;
   const queue = [];
 
@@ -156,7 +82,7 @@ export function scheduler(baseLib = {}, clock = jsclock()) {
   }
 
   // resume process for a duration (expressed in seconds)
-  function resume(duration, limit = 1000) {
+  start((duration, limit = 1000) => {
     const endsAt = time + duration;
     let proc = queue.pop();
     while (proc && proc.time < endsAt && limit--) {
@@ -166,18 +92,17 @@ export function scheduler(baseLib = {}, clock = jsclock()) {
     }
     if (proc) queue.push(proc);
     time = endsAt;
-  }
+  });
 
   // API: return a function to run programs
   function run(program, delay) {
     return schedule(process({ time }).load(program));
   }
-  run.stop = clock(resume);
   run.lib = lib;
   return run;
 }
 
-const OPERATOR = /^@([^-]+)(-.*)?$/;
+const OPERATOR = /^(@[^-]+)(-.*)$/;
 export function compiler() {
   return function compile(program) {
     let m;
@@ -186,10 +111,8 @@ export function compiler() {
         if (Array.isArray(op)) {
           compiled.push(compile(op));
         } else if ((m = OPERATOR.exec(op))) {
-          if (m[2]) compiled.push(m[2].slice(1));
-          const name = m[1];
-          const fn = lib[name] || ((proc, lib) => lib[name](proc, lib));
-          compiled.push(fn);
+          compiled.push(m[2].slice(1));
+          compiled.push(m[1]);
         } else {
           compiled.push(op);
         }
