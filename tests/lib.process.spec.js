@@ -59,4 +59,12 @@ describe("process library", () => {
     expect(s.processes().length).toEqual(1);
     expect(count).toBe(11);
   });
+
+  test("@spawn sets id", () => {
+    const s = scheduler(env);
+    s.fork(null, [[wait(0.5)], "child", "@spawn"]);
+    jest.runTimersToTime(1 * 1000);
+    expect(s.processes().length).toEqual(1);
+    expect(s.processes()[0].id).toEqual("child");
+  });
 });

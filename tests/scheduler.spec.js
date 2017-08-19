@@ -53,4 +53,15 @@ describe("scheduler", () => {
     const proc1 = s.fork(null, []);
     expect(s.find(proc1.id)).toBe(proc1);
   });
+
+  it("removes processes", () => {
+    const s = scheduler(env);
+    const proc1 = s.fork(null, []);
+    const proc2 = s.fork(null, []);
+    expect(s.remove(proc1.id)).toBe(true);
+    expect(s.processes().length).toBe(1);
+    expect(s.remove(proc1.id)).toBe(false);
+    expect(s.remove(proc2.id)).toBe(true);
+    expect(s.processes().length).toBe(0);
+  });
 });

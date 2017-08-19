@@ -17,8 +17,8 @@ export default {
 
   /**
    * Repeat a number of times
-   * @param [number] the number of times
    * @param [array] the program to repeat
+   * @param [number] the number of times
    */
   "@repeat": proc => {
     const times = proc.stack.pop();
@@ -52,6 +52,22 @@ export default {
   },
 
   /**
+   * Fork (or replace) a loop with a name 
+   * @param [array] program
+   * @param [string] name
+   * @example
+   * [['@kick', '@wait-1'], 'kick', '@spawn']
+   */
+  "@spawn": (proc, env) => {
+    if (env.schedule) {
+      const id = proc.stack.pop();
+      env.schedule.remove(id);
+      const program = proc.stack.pop();
+      env.schedule.fork(proc, [id, "@id", program, "@forever"]);
+    }
+  },
+
+  /**
    * Start a new child process that repeats forever
    */
   "@loop": (proc, env) => {
@@ -65,7 +81,12 @@ export default {
    * Stop another process
    * @param [string] the id of the process
    */
-  "@stop": proc => {},
+  "@stop": (proc, env) => {
+    if (env.schedule) {
+      const id = proc.stack.pop();
+      env.schedule.remove(id);
+    }
+  },
   "@pause": proc => {},
   "@resume": proc => {}
 };

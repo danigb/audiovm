@@ -81,6 +81,15 @@ export function scheduler(env = {}, start = clock()) {
   };
   schedule.processes = () => queue.slice();
   schedule.find = id => queue.find(p => p.id === id);
+  schedule.remove = id => {
+    for (let i = 0; i < queue.length; i++) {
+      if (queue[i].id === id) {
+        queue.splice(i, 1);
+        return true;
+      }
+    }
+    return false;
+  };
 
   // resume process for a duration (expressed in seconds)
   start((duration, limit = 1000) => {
