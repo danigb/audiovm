@@ -26,9 +26,9 @@ export default {
    * @example
    * ['pluck', '@call']
    */
-  "@call": (proc, lib) => {
+  "@call": (proc, env) => {
     const name = proc.stack.pop();
-    proc.call(lib, "@" + name);
+    proc.call(env, "@" + name);
   },
 
   /**
@@ -39,10 +39,10 @@ export default {
    * @example
    * [[440, '@set-freq', '@pluck'], 'pluck-A4', '@defn']
    */
-  "@defn": (proc, lib) => {
+  "@defn": (proc, env) => {
     const name = "@" + proc.stack.pop();
     const program = proc.stack.pop();
-    lib[name] = proc => proc.load(program);
+    env.lib[name] = proc => proc.load(program);
   },
 
   /**

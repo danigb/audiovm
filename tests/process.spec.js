@@ -1,6 +1,4 @@
-import { process } from "..";
-
-jest.useFakeTimers();
+import { process } from "../src/vm";
 
 const logger = (output = []) => {
   const log = proc => {
@@ -19,7 +17,8 @@ describe("process", () => {
 
   it("exec from library", () => {
     const log = logger();
-    process().load(["A", "@log", "B", "@log"]).exec({ "@log": log });
+    const env = { lib: { "@log": log } };
+    process().load(["A", "@log", "B", "@log"]).exec(env);
     expect(log.output).toEqual(["A:0", "B:0"]);
   });
 

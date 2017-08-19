@@ -3,7 +3,6 @@
   "description": "Audio Virtual Machine",
   "homepage": "https://github.com/danigb/audiovm#readme",
   "version": "1.0.0",
-  "main": "dist/audiovm.js",
   "jsnext:main": "src/index.js",
   "module": "src/index.js",
   "repository": "danigb/audiovm",

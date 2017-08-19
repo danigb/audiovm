@@ -1,4 +1,4 @@
-import { compiler } from "..";
+import { compiler } from "../src/vm";
 
 describe("compiler", () => {
   it("splits [@name-param] into [param, @name]", () => {
@@ -8,9 +8,8 @@ describe("compiler", () => {
   });
 
   it("compiles recursively", () => {
-    const program = [[440, '@set-freq'], "@eval"];
-    const compiled = [[440, 'freq', '@set'], '@eval'];
+    const program = [[440, "@set-freq"], "@eval"];
+    const compiled = [[440, "freq", "@set"], "@eval"];
     expect(compiler()(program)).toEqual(compiled);
   });
-
 });

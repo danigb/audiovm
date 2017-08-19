@@ -1,20 +1,22 @@
-import { process } from "..";
+import { process } from "../src/vm";
 import stdlib from "../src/library/stdlib";
 
+const env = { lib: stdlib };
+
 const logger = (output = []) => {
-  stdlib["@log"] = proc => output.push(proc.time + ":" + proc.stack.pop());
+  console.log = (time, value) => output.push(time + ":" + value);
   return output;
 };
 
 describe("core library", () => {
   test("@wait", () => {
-    const proc = process({ time: 2 }).load([1, "@wait"]).exec(stdlib);
+    const proc = process({ time: 2 }).load([1, "@wait"]).exec(env);
     expect(proc.time).toEqual(3);
   });
 
   test("@call", () => {
     const output = logger();
-    process().load(["hi", "log", "@call"]).exec(stdlib);
+    process().load(["hi", "log", "@call"]).exec(env);
     expect(output).toEqual(["0:hi"]);
   });
 
@@ -22,7 +24,7 @@ describe("core library", () => {
     const output = logger();
     process()
       .load([["hello", "@log", "@log"], "hi", "@defn", "one", "@hi"])
-      .exec(stdlib);
+      .exec(env);
 
     expect(output).toEqual(["0:hello", "0:one"]);
   });
@@ -35,7 +37,7 @@ describe("core library", () => {
 
     process(current)
       .load(["a", "@get", "@log", "b", "@get", "@log", "c", "@get", "@log"])
-      .exec(stdlib);
+      .exec(env);
     expect(output).toEqual(["0:A3", "0:B2", "0:C1"]);
   });
 
@@ -46,7 +48,7 @@ describe("core library", () => {
 
     process(current)
       .load(["A", "a", "@set", "B", "b", "@set", "C", "c", "@set"])
-      .exec(stdlib);
+      .exec(env);
     expect(current.context).toEqual({ a: "A" });
     expect(parent.context).toEqual({ a: "A2", b: "B" });
     expect(root.context).toEqual({ a: "A1", b: "B1", c: "C" });
@@ -54,7 +56,7 @@ describe("core library", () => {
 
   test("@let", () => {
     const proc = process();
-    proc.load([440, "freq", "@let"]).exec(stdlib);
+    proc.load([440, "freq", "@let"]).exec(env);
     expect(proc.context).toEqual({ freq: 440 });
   });
 });

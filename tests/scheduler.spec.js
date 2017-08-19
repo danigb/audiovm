@@ -1,7 +1,9 @@
-import { scheduler } from "..";
+import { scheduler } from "../src/vm";
 import stdlib from "../src/library/stdlib";
 
 jest.useFakeTimers();
+
+const env = { lib: stdlib };
 
 const logger = (output = []) => {
   stdlib["@log"] = proc => output.push(proc.time + ":" + proc.stack.pop());
@@ -9,11 +11,11 @@ const logger = (output = []) => {
 };
 
 describe("scheduler", () => {
-  it("runs a program in time", () => {
+  it("forks a program in time", () => {
     const output = logger();
 
-    const run = scheduler(stdlib);
-    run([0.5, "@wait", "A", "@log"]);
+    const s = scheduler(env);
+    s.fork(null, [0.5, "@wait", "A", "@log"]);
     jest.runTimersToTime(100);
     expect(output).toEqual([]);
     jest.runTimersToTime(1000);
@@ -23,10 +25,10 @@ describe("scheduler", () => {
   it("coroutine style scheduling", () => {
     const output = logger();
 
-    const run = scheduler(stdlib);
-    run([0.1, "@wait", "A1", "@log", 0.8, "@wait", "A2", "@log"]);
-    run([0.2, "@wait", "B1", "@log", 0.5, "@wait", "B2", "@log"]);
-    run([0.25, "@wait", "C1", "@log", 0.25, "@wait", "C2", "@log"]);
+    const s = scheduler(env);
+    s.fork(null, [0.1, "@wait", "A1", "@log", 0.8, "@wait", "A2", "@log"]);
+    s.fork(null, [0.2, "@wait", "B1", "@log", 0.5, "@wait", "B2", "@log"]);
+    s.fork(null, [0.25, "@wait", "C1", "@log", 0.25, "@wait", "C2", "@log"]);
     jest.runTimersToTime(1000);
     expect(output).toEqual([
       "0.1:A1",
@@ -36,5 +38,19 @@ describe("scheduler", () => {
       "0.7:B2",
       "0.9:A2"
     ]);
+  });
+
+  it("return processes", () => {
+    const s = scheduler(env);
+    const proc1 = s.fork(null, []);
+    const proc2 = s.fork(null, []);
+    expect(s.processes()).toContain(proc1);
+    expect(s.processes()).toContain(proc2);
+  });
+
+  it("finds processes", () => {
+    const s = scheduler(env);
+    const proc1 = s.fork(null, []);
+    expect(s.find(proc1.id)).toBe(proc1);
   });
 });
