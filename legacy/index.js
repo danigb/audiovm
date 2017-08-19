@@ -7,6 +7,14 @@ const remove = (array, index) => {
 };
 
 const REPLACEMENTS = {
+  "@+": "@add",
+  "@-": "@sub",
+  "@*": "@mul",
+  "@/": "@div",
+  "@%": "@wrap",
+  "@!": "@not",
+  "@&&": "@and",
+  "@||": "@or",
   "@map": "@scale-lin",
   "@note": "@midi:note",
   "@note-on": "@midi:noteon",

@@ -1,3 +1,7 @@
+/**
+ * Basic operations
+ * @module stdlib
+ */
 export default {
   /**
    * Log next element from the stack

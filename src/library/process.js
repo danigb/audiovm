@@ -1,3 +1,8 @@
+/**
+ * Process operations
+ * @module process
+ */
+
 export default {
   /**
    * Set the id of this process
