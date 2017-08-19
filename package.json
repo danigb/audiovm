@@ -21,7 +21,8 @@
     "prepublish": "npm run build",
     "format": "prettier --semi false --write 'src/**/*.js'",
     "release": "npm run build && npm test && git commit -am $npm_package_version && git tag $npm_package_version && git push && git push --tags && npm publish",
-    "watch": "rollup -c --watch"
+    "watch": "rollup -c --watch",
+    "docs": "jsdoc src/ -r -d docs/"
   },
   "devDependencies": {
     "babel-preset-es2015-rollup": "^3.0.0",
