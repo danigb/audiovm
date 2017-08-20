@@ -24,6 +24,17 @@ export default {
   },
 
   /**
+   * Wait until next beat
+   * 
+   * @example
+   * ['@sync', '@kick']
+   */
+  "@sync": proc => {
+    const delay = Math.floor(proc.time) + 1 - proc.time;
+    if (delay < 0.99) proc.time = Math.floor(proc.time + 1);
+  },
+
+  /**
    * __@call__: invoke a function
    * @param [string] name - the function name
    * 

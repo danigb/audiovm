@@ -52,6 +52,7 @@ function factories(Gibberish) {
         amp: 0.7
       }).connect();
       const _note = pluck.note.bind(pluck);
+      const sampleRate = Gibberish.sampleRate;
       pluck.note = () => {
         const freq = pluck.freq;
         const amp = pluck.amp;

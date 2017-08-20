@@ -64,7 +64,6 @@ export const clock = (interval = 0.1) => resume => {
  * @param {Function} clock 
  */
 export function scheduler(env = {}, start = clock()) {
-  let time = 0;
   const queue = [];
 
   function schedule(proc) {
@@ -75,10 +74,12 @@ export function scheduler(env = {}, start = clock()) {
     queue.splice(i + 1, 0, proc);
     return proc;
   }
+  schedule.time = 0;
   schedule.env = Object.assign({ schedule }, env);
   schedule.fork = (parent, program) => {
-    return schedule(process({ parent, time }).load(program));
+    return schedule(process({ parent, time: schedule.time }).load(program));
   };
+  schedule.count = () => queue.length;
   schedule.processes = () => queue.slice();
   schedule.find = id => queue.find(p => p.id === id);
   schedule.remove = id => {
@@ -90,10 +91,11 @@ export function scheduler(env = {}, start = clock()) {
     }
     return false;
   };
+  schedule.removeAll = () => (queue.length = 0);
 
   // resume process for a duration (expressed in seconds)
   start((duration, limit = 1000) => {
-    const endsAt = time + duration;
+    const endsAt = schedule.time + duration;
     let proc = queue.pop();
     while (proc && proc.time < endsAt && limit--) {
       proc.exec(schedule.env, endsAt);
@@ -101,7 +103,7 @@ export function scheduler(env = {}, start = clock()) {
       proc = queue.pop();
     }
     if (proc) queue.push(proc);
-    time = endsAt;
+    schedule.time = endsAt;
   });
 
   return schedule;
@@ -137,6 +139,11 @@ export default function vm(env, clock) {
   const compile = compiler();
 
   return function run(program, sync = true) {
-    return schedule.fork(null, compile(program));
+    const compiled = compile(program);
+    if (sync) {
+      if (schedule.count()) compiled.unshift("@sync");
+      else schedule.time = Math.floor(schedule.time + 1);
+    }
+    return schedule.fork(null, compiled);
   };
 }

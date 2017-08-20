@@ -83,6 +83,16 @@ export default {
   },
 
   /**
+   * Stop all processes
+   * 
+   */
+  "@stop:all": (proc, env) => {
+    if (env.schedule) {
+      env.schedule.removeAll();
+    }
+  },
+
+  /**
    * Stop another process
    * @param [string] the id of the process
    */

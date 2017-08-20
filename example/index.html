@@ -17,6 +17,7 @@
     input[type=button] {
       background-color: #efefef;
       border: 0;
+      margin-right: 1em;
     }
   </style>
 </head>
@@ -33,8 +34,8 @@
     const examples = [
       {
         title: 'Hello World',
-        desc: 'Print something in the console',
-        program: [['hello world!', '@log', 1, '@wait'], 2, '@repeat']
+        desc: 'Play a note in a loop',
+        program: [['@pluck', 0.5, '@wait'], '@loop'],
       },
       {
         title: 'Kick vs Snare',
@@ -45,8 +46,8 @@
       {
         title: 'C major scale',
         desc: 'Play an ascending major scale',
-        program: [':Pluck', 'C3', 'major', 16, '@scale',
-          ['@mtof', '@set-freq', '@@note', 0.5, '@wait'], '@each']
+        program: ['C3', 'major', 16, '@scale',
+          ['@mtof', '@pluck:note', 0.5, '@wait'], '@each']
       },
       {
         title: 'Random minor scale',
@@ -61,13 +62,14 @@
 
     const run = (example) => vm(example);
     const print = (example) => JSON.stringify(example)
-
+    const stopAll = () => run(['@stop:all'], false);
 
     const example = (example, actions) => h('div', { id: 'app' }, [
       h('h3', {}, example.title),
       h('div', {}, example.desc),
       h('pre', {}, print(example.program)),
-      h('input', { value: 'Play', type: 'button', onclick: () => run(example.program) })
+      h('input', { value: 'Play', type: 'button', onclick: () => run(example.program) }),
+      h('input', { value: 'Stop', type: 'button', onclick: () => stopAll() })
     ])
 
     app({

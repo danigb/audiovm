@@ -39,11 +39,11 @@ describe("process library", () => {
     s.fork(null, [[wait(10), noop], "@fork", wait(2), noop]);
 
     jest.runTimersToTime(1 * 1000);
-    expect(s.processes().length).toEqual(2);
+    expect(s.count()).toEqual(2);
     jest.runTimersToTime(5 * 1000);
-    expect(s.processes().length).toEqual(1);
+    expect(s.count()).toEqual(1);
     jest.runTimersToTime(12 * 1000);
-    expect(s.processes().length).toEqual(0);
+    expect(s.count()).toEqual(0);
   });
 
   test("@loop", () => {
@@ -54,9 +54,9 @@ describe("process library", () => {
     s.fork(null, [[tick, wait(1)], "@loop", wait(2), noop]);
 
     jest.runTimersToTime(0.5 * 1000);
-    expect(s.processes().length).toEqual(2);
+    expect(s.count()).toEqual(2);
     jest.runTimersToTime(10 * 1000);
-    expect(s.processes().length).toEqual(1);
+    expect(s.count()).toEqual(1);
     expect(count).toBe(11);
   });
 
@@ -64,7 +64,7 @@ describe("process library", () => {
     const s = scheduler(env);
     s.fork(null, [[wait(0.5)], "child", "@spawn"]);
     jest.runTimersToTime(1 * 1000);
-    expect(s.processes().length).toEqual(1);
+    expect(s.count()).toEqual(1);
     expect(s.processes()[0].id).toEqual("child");
   });
 });
