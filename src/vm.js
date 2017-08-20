@@ -113,37 +113,18 @@ export function scheduler(env = {}, start = clock()) {
   return schedule;
 }
 
-const OPERATOR = /^(@[^-]+)(-.*)$/;
-const NUMERIC = /^[\d\.]+$/;
-export function compiler() {
-  return function compile(program) {
-    let m;
-    return program.reduce((compiled, op) => {
-      if (Array.isArray(op)) {
-        compiled.push(compile(op));
-      } else if ((m = OPERATOR.exec(op))) {
-        const value = m[2].slice(1);
-        compiled.push(NUMERIC.test(value) ? +value : value);
-        compiled.push(m[1]);
-      } else {
-        compiled.push(op);
-      }
-      return compiled;
-    }, []);
-  };
-}
-
 /**
  * Create a Virtual Machine
  * 
  * @private
  * @param {Object} env - the enviroment
  * @param {Function} clock - the clock function
+ * @param [Function] compile
  * @return {Function} a `run` function
  */
-export default function vm(env, clock) {
+export default function vm(env, clock, compile) {
   const schedule = scheduler(env, clock);
-  const compile = compiler();
+  if (!compile) compile = program => program;
 
   /**
    * Run a program

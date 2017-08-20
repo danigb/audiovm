@@ -26,7 +26,7 @@
   <div id="app"></div>
   <script src="js/gibberish2.min.js"></script>
   <script src="../dist/audiovm.js"></script>
-  <script src="https://unpkg.com/hyperapp"></script>
+  <script src="js/hyperapp.js"></script>
   <script>
     const vm = AudioVM.initGibberish();
     const { h, app } = hyperapp
@@ -35,13 +35,12 @@
       {
         title: 'Hello World',
         desc: 'Play a note in a loop',
-        program: [['@pluck', 0.5, '@wait'], '@loop'],
+        program: ["#@>", "@loop", ['@pluck', 0.5, '@wait']]
       },
       {
         title: 'Kick vs Snare',
         desc: 'The simplest rythmic pattern',
-        program: [['@kick', 0.5, '@wait', '@snare', 0.5, '@wait'],
-          4, '@repeat']
+        program: ["#@>", "@repeat", 4, ['@kick', 0.5, '@wait', '@snare', 0.5, '@wait']]
       },
       {
         title: 'C major scale',

@@ -1,4 +1,5 @@
 import VM from "./vm";
+import macros from "./macros";
 import lib from "./library";
 
 /**
@@ -37,7 +38,7 @@ export default function init(Gibberish) {
     });
   };
 
-  return VM(env, clock);
+  return VM(env, clock, macros);
 }
 
 function createLibrary(Gibberish) {
