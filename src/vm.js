@@ -127,7 +127,7 @@ export default function vm(env, clock, transpile) {
   if (!transpile) transpile = program => program;
 
   return {
-    env: schedule.env,
+    env,
     schedule,
     transpile,
     /**
@@ -147,7 +147,7 @@ export default function vm(env, clock, transpile) {
     },
 
     debug: () => {
-      const lib = schedule.env.lib;
+      const lib = env.lib;
       const names = Object.keys(lib);
       names.forEach(name => {
         const fn = lib[name];
@@ -158,6 +158,7 @@ export default function vm(env, clock, transpile) {
           fn(proc, env);
         };
       });
+      return names;
     }
   };
 }
