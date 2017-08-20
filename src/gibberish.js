@@ -28,10 +28,16 @@ function createLibrary(Gibberish) {
   const create = factories(Gibberish);
   const names = Object.keys(create);
   const cache = [];
+  const get = name => cache[name] || (cache[name] = create[name]());
 
   return names.reduce((lib, name) => {
     lib["@" + name] = () => {
-      const inst = cache[name] || (cache[name] = create[name]());
+      const inst = get(name);
+      inst.note();
+    };
+    lib["@" + name + ":note"] = proc => {
+      const inst = get(name);
+      inst.freq = proc.stack.pop();
       inst.note();
     };
     return lib;
