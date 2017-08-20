@@ -11,7 +11,7 @@ export default {
    * @return {number} frequency
    * 
    * @example
-   * [60, '@mtof']
+   * [60, '@mtof', '@pluck:note']
    */
   "@mtof": proc => {
     const midi = pitch(proc.stack.pop());

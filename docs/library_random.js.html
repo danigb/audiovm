@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Home</title>
+    <title>JSDoc: Source: library/random.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,32 +17,52 @@
 
 <div id="main">
 
-    <h1 class="page-title">Home</h1>
+    <h1 class="page-title">Source: library/random.js</h1>
 
     
 
 
 
     
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Random operations
+ * @module random
+ */
 
+const floor = Math.floor;
+// generates a float between [0, 1)
+const rnd = Math.random;
+// a function that generates integer random in range [0,n)
+const irnd = n => floor(rnd() * n);
 
-    <h3> </h3>
+export default {
+  /**
+   * Generate a random number between 0 and 1
+   * @function
+   * @example
+   * ['@rand', '@kick:set-amp']
+   */
+  "@rand": proc => {
+    proc.stack.push(rnd());
+  },
 
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
-
+  /**
+   * Picks a random element from an array
+   * @param {array} array
+   * @function
+   * @example
+   * [['one', 'two', 'three'], '@pick', '@log']
+   */
+  "@pick": proc => {
+    const arr = proc.stack[proc.stack.length - 1];
+    proc.stack.push(arr[irnd(arr.length)]);
+  }
+};
+</code></pre>
+        </article>
+    </section>
 
 
 

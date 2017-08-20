@@ -2,6 +2,8 @@ let nextId = 1;
 
 /**
  * Create a process
+ * @private
+ * @param {Object} props
  * @return {Process} 
  */
 export function process(props) {
@@ -49,6 +51,7 @@ export function process(props) {
  * A reference clock. A clock is a function that accepts a callback
  * and call the callback at a given interval
  * 
+ * @private
  * @param {Number} interval - the interval of the clock in seconds
  * @return {Function} 
  */
@@ -60,7 +63,8 @@ export const clock = (interval = 0.1) => resume => {
 /**
  * Create a scheduler
  * 
- * @param {Object} library - the library
+ * @private
+ * @param {Object} env - the environment
  * @param {Function} clock 
  */
 export function scheduler(env = {}, start = clock()) {
@@ -110,6 +114,7 @@ export function scheduler(env = {}, start = clock()) {
 }
 
 const OPERATOR = /^(@[^-]+)(-.*)$/;
+const NUMERIC = /^[\d\.]+$/;
 export function compiler() {
   return function compile(program) {
     let m;
@@ -117,7 +122,8 @@ export function compiler() {
       if (Array.isArray(op)) {
         compiled.push(compile(op));
       } else if ((m = OPERATOR.exec(op))) {
-        compiled.push(m[2].slice(1));
+        const value = m[2].slice(1);
+        compiled.push(NUMERIC.test(value) ? +value : value);
         compiled.push(m[1]);
       } else {
         compiled.push(op);
@@ -130,6 +136,7 @@ export function compiler() {
 /**
  * Create a Virtual Machine
  * 
+ * @private
  * @param {Object} env - the enviroment
  * @param {Function} clock - the clock function
  * @return {Function} a `run` function
@@ -138,6 +145,13 @@ export default function vm(env, clock) {
   const schedule = scheduler(env, clock);
   const compile = compiler();
 
+  /**
+   * Run a program
+   * @function
+   * @name run
+   * @memberof vm
+   * @param {array} program - the program to run
+   */
   return function run(program, sync = true) {
     const compiled = compile(program);
     if (sync) {

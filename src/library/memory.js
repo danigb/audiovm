@@ -1,10 +1,12 @@
 /**
- * Basic operations
- * @module stdlib
+ * Memory operations
+ * @module memory
  */
 export default {
   /**
-   * Log next element from the stack
+   * Get the next element from the stack and log it
+   * @example
+   * [60, '@mtof', '@log']
    */
   "@log": proc => {
     const value = proc.stack.pop();
@@ -12,7 +14,17 @@ export default {
   },
 
   /**
-   * __@call__: invoke a function
+   * Duplicate the next value of the stack
+   * @example
+   * ['Hi', '@dup', '@log', '@log'] 
+   */
+  "@dup": proc => {
+    const value = proc.stack[proc.stack.length - 1];
+    proc.stack.push(value);
+  },
+
+  /**
+   * Invoke a function
    * @param [string] name - the function name
    * 
    * @example

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Home</title>
+    <title>JSDoc: Source: library/sequence.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,32 +17,37 @@
 
 <div id="main">
 
-    <h1 class="page-title">Home</h1>
+    <h1 class="page-title">Source: library/sequence.js</h1>
 
     
 
 
 
     
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Sequence operations
+ * @module sequence
+ */
 
-
-    <h3> </h3>
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
-
+export default {
+  /**
+ * @example
+ * [':Pluck', [60, 61, 62], ['@mtof', '@set-freq', '@@note'], @each]   
+ */
+  "@each": proc => {
+    const fn = proc.stack.pop();
+    const array = proc.stack[proc.stack.length - 1];
+    if (array.length) {
+      const next = array.shift();
+      proc.load([next, ...fn, fn, "@each"]);
+    }
+  }
+};
+</code></pre>
+        </article>
+    </section>
 
 
 

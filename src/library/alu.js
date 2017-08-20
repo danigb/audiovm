@@ -1,5 +1,5 @@
 /**
- * Arithmetic and Logic 
+ * Arithmetic and logic operations
  * @module alu
  */
 
@@ -15,9 +15,6 @@ const op1 = fn => proc => {
 const op2 = fn => proc => {
   proc.stack.push(fn(proc.stack.pop(), proc.stack.pop()));
 };
-
-// The core of stdlib commands. It include arithmetic, logic,
-// execution and repetition
 
 export default {
   /**
