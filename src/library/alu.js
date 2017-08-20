@@ -68,9 +68,9 @@ export default {
 
   /**
    * Conditional execution
-   * @param [array] trueBranch
-   * @param [array] falseBranch
-   * @param [boolean] condition
+   * @param array trueBranch
+   * @param array falseBranch
+   * @param boolean condition
    * 
    * @example
    * [['@kick'], ['@snare'], true, '@cond']

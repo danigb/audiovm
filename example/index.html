@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <title>AudioVM Example</title>
+  <meta charset="utf-8">
+  <style>
+    #app {
+      max-width: 520px;
+      margin: 20px auto;
+    }
+
+    pre {
+      white-space: pre-wrap;
+    }
+
+    input[type=button] {
+      background-color: #efefef;
+      border: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app"></div>
+  <script src="js/gibberish2.min.js"></script>
+  <script src="../dist/audiovm.js"></script>
+  <script src="https://unpkg.com/hyperapp"></script>
+  <script>
+    const vm = AudioVM.initGibberish();
+    const { h, app } = hyperapp
+
+    const examples = [
+      {
+        title: 'Hello World',
+        desc: 'Print something in the console',
+        program: [['hello world!', '@log', 1, '@wait'], 2, '@repeat']
+      },
+      {
+        title: 'Kick vs Snare',
+        desc: 'The simplest rythmic pattern',
+        program: [['@kick', 0.5, '@wait', '@snare', 0.5, '@wait'],
+          4, '@repeat']
+      },
+      {
+        title: 'C major scale',
+        desc: 'Play an ascending major scale',
+        program: [':Pluck', 'C3', 'major', 16, '@scale',
+          ['@mtof', '@set-freq', '@@note', 0.5, '@wait'], '@each']
+      },
+      {
+        title: 'Random minor scale',
+        desc: 'Pick notes randomly from a scale',
+        program: [
+          ':Pluck', 'C3', 'minor', 8, '@scale',
+          ['@dup', '@pick', '@mtof', '@set-freq', '@@note', 0.3, '@wait'],
+          16, '@repeat'
+        ]
+      }
+    ]
+
+    const run = (example) => vm(example);
+    const print = (example) => JSON.stringify(example)
+
+
+    const example = (example, actions) => h('div', { id: 'app' }, [
+      h('h3', {}, example.title),
+      h('div', {}, example.desc),
+      h('pre', {}, print(example.program)),
+      h('input', { value: 'Play', type: 'button', onclick: () => run(example.program) })
+    ])
+
+    app({
+      state: { examples },
+      view: (state) => h('div', {}, state.examples.map(example))
+    });
+  </script>
+</body>
+
+</html>

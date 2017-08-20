@@ -76,7 +76,7 @@ export function scheduler(env = {}, start = clock()) {
     return proc;
   }
   schedule.env = Object.assign({ schedule }, env);
-  schedule.fork = (parent, program, delay) => {
+  schedule.fork = (parent, program) => {
     return schedule(process({ parent, time }).load(program));
   };
   schedule.processes = () => queue.slice();
@@ -122,5 +122,21 @@ export function compiler() {
       }
       return compiled;
     }, []);
+  };
+}
+
+/**
+ * Create a Virtual Machine
+ * 
+ * @param {Object} env - the enviroment
+ * @param {Function} clock - the clock function
+ * @return {Function} a `run` function
+ */
+export default function vm(env, clock) {
+  const schedule = scheduler(env, clock);
+  const compile = compiler();
+
+  return function run(program, sync = true) {
+    return schedule.fork(null, compile(program));
   };
 }
