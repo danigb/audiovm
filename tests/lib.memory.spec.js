@@ -9,6 +9,12 @@ const logger = (output = []) => {
 };
 
 describe("memory operations", () => {
+  test("@eval", () => {
+    const output = logger();
+    process().load([["hello", "@log"], "@eval"]).exec(env);
+    expect(output).toEqual(["0:hello"]);
+  });
+
   test("@call", () => {
     const output = logger();
     process().load(["hi", "log", "@call"]).exec(env);

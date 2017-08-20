@@ -120,10 +120,9 @@ export default {
    * @param [string] the id of the process
    */
   "@stop": (proc, env) => {
-    if (env.schedule) {
-      const id = proc.stack.pop();
-      env.schedule.remove(id);
-    }
+    const id = proc.stack.pop();
+    const res = env.schedule.remove(id);
+    console.log("stop", id, res);
   },
   "@pause": proc => {},
   "@resume": proc => {}

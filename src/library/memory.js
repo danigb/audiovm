@@ -4,6 +4,18 @@
  */
 export default {
   /**
+   * Evaluate the program from the stack
+   * @param {array} program
+   * 
+   * @example
+   * [['minor', 'C3', 8, '@scale', '@let-Scale'], '@eval', '@get-Scale']
+   */
+  "@eval": proc => {
+    const program = proc.stack.pop();
+    proc.load(program);
+  },
+
+  /**
    * Get the next element from the stack and log it
    * @example
    * [60, '@mtof', '@log']

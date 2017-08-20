@@ -9,7 +9,7 @@ const comments = () => null;
 comments.test = matches(COMMENT);
 
 // reverse the direction of current array
-const FORWARD = /^#@>\s*$/;
+const FORWARD = /^@>>\s*$/;
 const forward = (output, op, index, input, transpile) => {
   if (index !== 0)
     throw Error("Forward operator must be the first of an array");
@@ -18,6 +18,14 @@ const forward = (output, op, index, input, transpile) => {
   input.length = 0;
 };
 forward.test = matches(FORWARD);
+
+const FORWARD_INLINE = /^#@>>\s*$/;
+const forwardInline = (output, op, index, input, transpile) => {
+  const rev = op.slice(1).reverse();
+  transpile(rev).forEach(op => output.push(op));
+};
+forwardInline.test = op =>
+  Array.isArray(op) ? matches(FORWARD_INLINE)(op[0]) : false;
 
 // split operator params
 const OPERATOR = /^(@[^-]+)(-.*)$/;
@@ -29,4 +37,4 @@ const params = (output, op, index, input, transpile, test) => {
 };
 params.test = matches(OPERATOR);
 
-export default transpiler([comments, forward, params]);
+export default transpiler([comments, forwardInline, forward, params]);

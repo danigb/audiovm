@@ -20,19 +20,19 @@ export default {
 
   /**
    * Create a scale
-   * @param {string} tonic
    * @param {string} type
+   * @param {string} tonic
    * @param {number} numberOfNotes
    * 
    * @example
-   * ['C4', 'major', 8, '@scale']
+   * ['major', 'C4', 8, '@scale']
    */
   "@scale": proc => {
     const num = proc.stack.pop();
-    const name = proc.stack.pop();
     const tonic = pitch(proc.stack.pop());
+    const type = proc.stack.pop();
 
-    const scale = scales[name] ? degrees(scales[name](tonic), num) : [];
-    proc.stack.push(scale);
+    const notes = scales[type] ? degrees(scales[type](tonic), num) : [];
+    proc.stack.push(notes);
   }
 };

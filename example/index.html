@@ -35,45 +35,71 @@
       {
         title: 'Hello World',
         desc: 'Play a note in a loop',
-        program: ["#@>", "@loop", ['@pluck', 0.5, '@wait']]
+        program: ["@>>", "@loop", ['@pluck', 0.5, '@wait']]
       },
       {
         title: 'Kick vs Snare',
         desc: 'The simplest rythmic pattern',
-        program: ["#@>", "@repeat", 4, ['@kick', 0.5, '@wait', '@snare', 0.5, '@wait']]
+        program: ["@>>", "@repeat", 4, ['@kick', 0.5, '@wait', '@snare', 0.5, '@wait']]
       },
       {
         title: 'C major scale',
         desc: 'Play an ascending major scale',
         program: ['C3', 'major', 15, '@scale',
-          ['@mtof', '@pluck:note', 0.5, '@wait'], '@each']
+          ['@mtof', '@pluck:note', 0.4, '@wait'], '@each']
       },
       {
         title: 'Random minor scale',
         desc: 'Pick notes randomly from a scale',
         program: [
-          'C3', 'minor', 8, '@scale',
-          ['@dup', '@pick', '@mtof', '@pluck:note', 0.3, '@wait'],
-          16, '@repeat'
-        ]
+          '@>>', '@loop', ['@get-notes', '@pick', '@mtof', '@pluck:note', '@wait-0.3'],
+          //'@eval', ['@>>', '@let-notes', '@scale', 8, 'C3', 'minor'],
+          '@eval', ['minor', 'C3', 8, '@scale', '@let-notes'],
+        ],
       }
     ]
 
-    const run = (example) => vm(example);
     const print = (example) => JSON.stringify(example)
-    const stopAll = () => run(['@stop:all'], false);
+    const isRunning = (example) => example.procId !== undefined;
 
     const example = (example, actions) => h('div', { id: 'app' }, [
       h('h3', {}, example.title),
       h('div', {}, example.desc),
       h('pre', {}, print(example.program)),
-      h('input', { value: 'Play', type: 'button', onclick: () => run(example.program) }),
-      h('input', { value: 'Stop', type: 'button', onclick: () => stopAll() })
+      example.compiledVisible ? h('pre', {}, print(vm.transpile(example.program))) : null,
+      h('input', {
+        value: isRunning(example) ? 'Stop' : 'Play', type: 'button',
+        onclick: () => actions.togglePlay(example)
+      }),
+      h('input', {
+        value: example.compiledVisible ? 'Hide compiled' : 'Show compiled',
+        type: 'button', onclick: () => actions.toggleCompiled(example)
+      })
     ])
 
     app({
       state: { examples },
-      view: (state) => h('div', {}, state.examples.map(example))
+      view: (state, actions) => h('div', {}, state.examples.map(e => example(e, actions))),
+      actions: {
+        togglePlay: (state, actions, example) => {
+          if (isRunning(example)) {
+            vm.run([example.procId, '@stop'], false);
+            example.procId = undefined;
+          } else {
+            example.procId = vm.run(example.program).id;
+          }
+          return state;
+        },
+        toggleCompiled: (state, actions, example) => {
+          example.compiledVisible = !example.compiledVisible;
+          return state;
+        }
+      },
+      events: {
+        load: () => {
+          vm.debug();
+        }
+      }
     });
   </script>
 </body>

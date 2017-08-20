@@ -8,7 +8,7 @@ let nextId = 1;
  */
 export function process(props) {
   const proc = {
-    id: nextId++,
+    id: "" + nextId++,
     time: 0,
     context: {},
     stack: [],
@@ -119,26 +119,45 @@ export function scheduler(env = {}, start = clock()) {
  * @private
  * @param {Object} env - the enviroment
  * @param {Function} clock - the clock function
- * @param [Function] compile
- * @return {Function} a `run` function
+ * @param [Function] transpile - an optional transpile function
+ * @return {VM} the vm object
  */
-export default function vm(env, clock, compile) {
+export default function vm(env, clock, transpile) {
   const schedule = scheduler(env, clock);
-  if (!compile) compile = program => program;
+  if (!transpile) transpile = program => program;
 
-  /**
-   * Run a program
-   * @function
-   * @name run
-   * @memberof vm
-   * @param {array} program - the program to run
-   */
-  return function run(program, sync = true) {
-    const compiled = compile(program);
-    if (sync) {
-      if (schedule.count()) compiled.unshift("@sync");
-      else schedule.time = Math.floor(schedule.time + 1);
+  return {
+    env: schedule.env,
+    schedule,
+    transpile,
+    /**
+     * Run a program
+     * @function
+     * @name run
+     * @memberof vm
+     * @param {array} program - the program to run
+     */
+    run: (program, sync = true) => {
+      const transpiled = transpile(program);
+      if (sync) {
+        if (schedule.count()) transpiled.unshift("@sync");
+        else schedule.time = Math.floor(schedule.time + 1);
+      }
+      return schedule.fork(null, transpiled);
+    },
+
+    debug: () => {
+      const lib = schedule.env.lib;
+      const names = Object.keys(lib);
+      names.forEach(name => {
+        const fn = lib[name];
+        lib[name] = (proc, env) => {
+          const next = proc.stack[proc.stack.length - 1];
+          const next2 = proc.stack[proc.stack.length - 2];
+          console.log("at", proc.time, name, next, next2);
+          fn(proc, env);
+        };
+      });
     }
-    return schedule.fork(null, compiled);
   };
 }

@@ -1,14 +1,27 @@
 import compile from "../src/macros";
 
 describe("macros", () => {
-  it("insert comments with ##", () => {
+  it("## comments: skip comments", () => {
     const program = ["## hello world", "@pluck"];
     const compiled = ["@pluck"];
     expect(compile(program)).toEqual(compiled);
   });
-  it("reverses array with #@>", () => {
-    const program = ["#@>", "@repeat", 4, ["@pluck", "@wait-1"]];
+
+  it("@>> forward direction", () => {
+    const program = ["@>>", "@let-notes", "@scale", "C", "major", 15];
+    const compiled = [15, "major", "C", "@scale", "notes", "@let"];
+    expect(compile(program)).toEqual(compiled);
+  });
+
+  it("@>> forward direction: reverses only current array", () => {
+    const program = ["@>>", "@repeat", 4, ["@pluck", "@wait-1"]];
     const compiled = [["@pluck", 1, "@wait"], 4, "@repeat"];
+    expect(compile(program)).toEqual(compiled);
+  });
+
+  it("#@>> expand: expands reversed current array into parent", () => {
+    const program = ["a", ["#@>>", "@op", 1, 2, 3]];
+    const compiled = ["a", 3, 2, 1, "@op"];
     expect(compile(program)).toEqual(compiled);
   });
 
