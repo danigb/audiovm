@@ -53,8 +53,8 @@
         title: 'Random minor scale',
         desc: 'Pick notes randomly from a scale',
         program: [
-          ':Pluck', 'C3', 'minor', 8, '@scale',
-          ['@dup', '@pick', '@mtof', '@set-freq', '@@note', 0.3, '@wait'],
+          'C3', 'minor', 8, '@scale',
+          ['@dup', '@pick', '@mtof', '@pluck:note', 0.3, '@wait'],
           16, '@repeat'
         ]
       }

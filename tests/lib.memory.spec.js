@@ -1,19 +1,14 @@
 import { process } from "../src/vm";
-import stdlib from "../src/library/stdlib";
+import memory from "../src/library/memory";
 
-const env = { lib: stdlib };
+const env = { lib: memory };
 
 const logger = (output = []) => {
   console.log = (time, value) => output.push(time + ":" + value);
   return output;
 };
 
-describe("core library", () => {
-  test("@wait", () => {
-    const proc = process({ time: 2 }).load([1, "@wait"]).exec(env);
-    expect(proc.time).toEqual(3);
-  });
-
+describe("memory operations", () => {
   test("@call", () => {
     const output = logger();
     process().load(["hi", "log", "@call"]).exec(env);

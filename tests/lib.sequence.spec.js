@@ -1,13 +1,8 @@
 import { process } from "../src/vm";
 import sequence from "../src/library/sequence";
+import { logger } from "./debug";
 
 const env = { lib: sequence };
-
-const logger = (output = []) => {
-  const log = proc => output.push(`${proc.time}:${proc.stack.pop()}`);
-  log.output = output;
-  return log;
-};
 
 describe("sequence", () => {
   test("@each", () => {

@@ -1,12 +1,16 @@
 import { process, scheduler } from "../src/vm";
 import proclib from "../src/library/process";
+import { waitFor, noop } from "./debug";
 
 jest.useFakeTimers();
-const wait = delay => proc => (proc.time += delay);
-const noop = () => null;
 const env = { lib: proclib };
 
-describe("process library", () => {
+describe("process operations", () => {
+  test("@wait", () => {
+    const proc = process({ time: 2 }).load([1, "@wait"]).exec(env);
+    expect(proc.time).toEqual(3);
+  });
+
   test("@id", () => {
     const proc = process().load(["name", "@id"]);
     expect(proc.id).not.toEqual("name");
@@ -36,7 +40,7 @@ describe("process library", () => {
 
   test("@fork", () => {
     const s = scheduler(env);
-    s.fork(null, [[wait(10), noop], "@fork", wait(2), noop]);
+    s.fork(null, [[waitFor(10), noop], "@fork", waitFor(2), noop]);
 
     jest.runTimersToTime(1 * 1000);
     expect(s.count()).toEqual(2);
@@ -51,7 +55,7 @@ describe("process library", () => {
     const tick = () => count++;
 
     const s = scheduler(env);
-    s.fork(null, [[tick, wait(1)], "@loop", wait(2), noop]);
+    s.fork(null, [[tick, waitFor(1)], "@loop", waitFor(2), noop]);
 
     jest.runTimersToTime(0.5 * 1000);
     expect(s.count()).toEqual(2);
@@ -62,7 +66,7 @@ describe("process library", () => {
 
   test("@spawn sets id", () => {
     const s = scheduler(env);
-    s.fork(null, [[wait(0.5)], "child", "@spawn"]);
+    s.fork(null, [[waitFor(0.5)], "child", "@spawn"]);
     jest.runTimersToTime(1 * 1000);
     expect(s.count()).toEqual(1);
     expect(s.processes()[0].id).toEqual("child");
