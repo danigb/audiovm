@@ -19,10 +19,9 @@ describe("macros", () => {
     expect(compile(program)).toEqual(compiled);
   });
 
-  it("#@>> expand: expands reversed current array into parent", () => {
-    const program = ["a", ["#@>>", "@op", 1, 2, 3]];
-    const compiled = ["a", 3, 2, 1, "@op"];
-    expect(compile(program)).toEqual(compiled);
+  it("forward must be first of an array", () => {
+    const program = ["@eval", "@>>"];
+    expect(() => compile(program)).toThrow();
   });
 
   it("splits [@name-param] into [param, @name]", () => {

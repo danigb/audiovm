@@ -19,14 +19,6 @@ const forward = (output, op, index, input, transpile) => {
 };
 forward.test = matches(FORWARD);
 
-const FORWARD_INLINE = /^#@>>\s*$/;
-const forwardInline = (output, op, index, input, transpile) => {
-  const rev = op.slice(1).reverse();
-  transpile(rev).forEach(op => output.push(op));
-};
-forwardInline.test = op =>
-  Array.isArray(op) ? matches(FORWARD_INLINE)(op[0]) : false;
-
 // split operator params
 const OPERATOR = /^(@[^-]+)(-.*)$/;
 const NUMERIC = /^[\d\.]+$/;
@@ -37,4 +29,4 @@ const params = (output, op, index, input, transpile, test) => {
 };
 params.test = matches(OPERATOR);
 
-export default transpiler([comments, forwardInline, forward, params]);
+export default transpiler([comments, forward, params]);

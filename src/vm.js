@@ -51,6 +51,10 @@ export function process(props) {
  * A reference clock. A clock is a function that accepts a callback
  * and call the callback at a given interval
  * 
+ * This clock is not to be used with music (Gibberish and Web Audio
+ * API provides better timing options) but as a reference on how
+ * to implement a clock and to perform tests.
+ * 
  * @private
  * @param {Number} interval - the interval of the clock in seconds
  * @return {Function} 
@@ -78,8 +82,10 @@ export function scheduler(env = {}, start = clock()) {
     queue.splice(i + 1, 0, proc);
     return proc;
   }
+  env.schedule = schedule;
+
   schedule.time = 0;
-  schedule.env = Object.assign({ schedule }, env);
+  schedule.env = env;
   schedule.fork = (parent, program) => {
     return schedule(process({ parent, time: schedule.time }).load(program));
   };
