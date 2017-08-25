@@ -1,4 +1,4 @@
-import compile from "../src/macros";
+import compile from "../src/transpiler/macros";
 
 describe("macros", () => {
   it("## comments: skip comments", () => {
@@ -8,19 +8,19 @@ describe("macros", () => {
   });
 
   it("@>> forward direction", () => {
-    const program = ["@>>", "@let-notes", "@scale", "C", "major", 15];
+    const program = [">>@let-notes", "@scale", "C", "major", 15];
     const compiled = [15, "major", "C", "@scale", "notes", "@let"];
     expect(compile(program)).toEqual(compiled);
   });
 
   it("@>> forward direction: reverses only current array", () => {
-    const program = ["@>>", "@repeat", 4, ["@pluck", "@wait-1"]];
+    const program = [">>@repeat", 4, ["@pluck", "@wait-1"]];
     const compiled = [["@pluck", 1, "@wait"], 4, "@repeat"];
     expect(compile(program)).toEqual(compiled);
   });
 
   it("forward must be first of an array", () => {
-    const program = ["@eval", "@>>"];
+    const program = ["@op", ">>@op"];
     expect(() => compile(program)).toThrow();
   });
 

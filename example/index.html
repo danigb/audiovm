@@ -35,26 +35,25 @@
       {
         title: 'Hello World',
         desc: 'Play a note in a loop',
-        program: ["@>>", "@loop", ['@pluck', 0.5, '@wait']]
+        program: [">>@loop", ['@pluck', 0.5, '@wait']]
       },
       {
         title: 'Kick vs Snare',
         desc: 'The simplest rythmic pattern',
-        program: ["@>>", "@repeat", 4, ['@kick', 0.5, '@wait', '@snare', 0.5, '@wait']]
+        program: [">>@repeat", 4, ['@kick', 0.5, '@wait', '@snare', 0.5, '@wait']]
       },
       {
         title: 'C major scale',
         desc: 'Play an ascending major scale',
-        program: ['major', 'A3', 15, '@scale',
-          ['@mtof', '@pluck:note', 0.4, '@wait'], '@each']
+        program: [">>@each", ["@mtof", "freq", "@pluck:note", "@wait-04"],
+          "@scale", 15, "A3", "major"]
       },
       {
         title: 'Random minor scale',
         desc: 'Pick notes randomly from a scale',
         program: [
           '@>>', '@loop', ['@get-notes', '@pick', '@mtof', '@pluck:note', '@wait-0.3'],
-          //'@eval', ['@>>', '@let-notes', '@scale', 8, 'C3', 'minor'],
-          '@eval', ['minor', 'C3', 8, '@scale', '@let-notes'],
+          '@eval', ['minor', 'C3', 15, '@scale', '@let-notes'],
         ],
       }
     ]
@@ -110,7 +109,7 @@
       },
       events: {
         load: () => {
-          console.log('joder', vm.debug());
+          console.log('debug', vm.debug());
         }
       }
     });

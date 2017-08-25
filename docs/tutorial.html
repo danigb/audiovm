@@ -1,0 +1,505 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>Audio Scheduler VM</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/skeleton.css">
+  <link rel="stylesheet" href="css/codemirror.css">
+  <link rel="stylesheet" href="css/github.min.css">
+  <style>
+    article {
+      max-width: 50em;
+      margin: 2em auto;
+    }
+  </style>
+</head>
+
+<body>
+  <article>
+    <h1>Audio Virtual Machine</h1>
+
+    <p>A tutorial by Graham Wakefield & Charlie Roberts published originally
+      <a href="https://worldmaking.github.io/workshop_nime_2017/">here.</a>
+    </p>
+
+    <p>We have designed a target language that captures some essential concepts for a musical live coding context, such as playing
+      notes and looping patterns. It is intentionally limited to make it fairly easy to learn, yet also intentionally designed
+      to make it possible to express a wide variety of ideas. It is not designed to be succinct -- that's the job of the
+      user-facing language you create! The target language is a bit like the instruction sequences real compilers use, in
+      that it is a list of commands. However ours can also have nested structures as lists of lists. A simple example is
+      a pattern that plays a note every beat:
+    </p>
+
+    <pre class="runnable">
+      [["@pluck", 1, "@wait"], "@loop"]
+    </pre>
+
+    <h2>Sounds</h2>
+
+    <p>The VM comes with a small number of instruments to get things going. Here's a plucked string instrument. There are two
+      ways to trigger it. You can use "@pluck:note" to set the one parameter:</p>
+
+    <pre class="runnable">
+      [440, "freq", "@pluck:note"]
+    </pre>
+
+    <p>or a list of parameters if they are wrapped in an array:</p>
+
+    <pre class="runnable">
+      [[880, "freq", 0.25, "amp"], "@pluck:note"]
+    </pre>
+
+    <p>Also, you can set the frequency and amplitude independently with the "@inst:set-param" syntax, and just use @pluck to
+      trigger the note using these values. This can allow a bit more flexibility in how these values are calculated:
+    </p>
+
+    <pre class="runnable">
+      ["@pluck"]
+    </pre>
+    <pre class="runnable">
+      [330, "@pluck:set-freq", 0.5, "@pluck:set-amp, "@pluck"]
+    </pre>
+
+    <p>There are also some percussion sounds, which either grab amplitude from the context (set using @set-amp), or specify
+      it using the :note variants:
+    </p>
+
+    <pre class="runnable">
+      [1, "amp", "@hat:note"]
+    </pre>
+    <pre class="runnable">
+      [1, "amp", "@kick:note"]
+    </pre>
+    <pre class="runnable">
+      [1, "amp", @snare:note"]
+    </pre>
+    <pre class="runnable">
+      [1, "amp", "@hat:note"]
+    </pre>
+    <pre class="runnable">
+      [1, "@kick:set-amp", "@kick"]
+    </pre>
+    <pre class="runnable">
+      [[1, "@snare:set-amp", "@snare"]
+    </pre>
+    <pre class="runnable">
+      [[
+        [
+          [0.3, 1], "@iter", "amp", @hat:note",
+          0.125, "@wait"
+        ], 8, "@repeat", 
+      ], 4, "@repeat"]
+    </pre>
+
+    <h2>Syntax sugar</h2>
+
+    <p>Since writing all programs in stack notation is counter-intuitive, there's a <code>@>></code> macro that reverses the
+      order of the current array.</p>
+    <p>The previous example can be written as:</p>
+
+    <pre class="unnable">
+      ["@>>", "@repeat", 4, [
+        "@>>", "@repeat", 8, [
+          [0.3, 1], "@iter", "amp", @hat:note", 
+          0.125, "@wait"
+        ]
+      ]]
+
+    <h2>Repetition and parallelism</h2>
+
+    <p>A list with several events normally happens at the same time:</p>
+
+    <pre class="runnable">
+      [
+        220, "freq", "@pluck:note",
+        330, "freq", "@pluck:note",
+      ]
+    </pre>
+
+    <p>Unless you add a n,@wait:</p>
+
+    <pre class="runnable">
+      [
+        220, "freq", "@set", "@pluck",
+        1, "@wait",
+        330, "freq", "@set", "@pluck"
+      ]
+    </pre>
+
+    <p>Here's how to do something a specific number of times: </p>
+
+    <pre class="runnable">
+      [
+        [ "@pluck", 0.25, "@wait" ], 4, "@repeat"
+      ]
+    </pre>
+
+    <pre class="runnable">
+    [
+      4, "@repeat", [ "@pluck", 0.25, "@wait" ],
+      [220, "freq", "@set"], "@pluck"
+    ]
+  </pre>
+
+    <p>Here's how to do something forever:</p>
+
+    <pre class="runnable">
+[
+"@loop", [ "@pluck", 0.25, "@wait" ]
+]
+  </pre>
+    <button class="button-secondary" onclick="vm.run(['@stop-all'], false)">Stop</button>
+
+
+    <p>Note that @loop will run the pattern that follows it in parallel, which means that you can keep on triggering more things
+      after it. So it's easy to set up a bunch of parallel processes: </p>
+
+    <pre class="runnable">
+[
+    "@loop", [ 0.5, "@kick-note", 2, "@wait" ],
+    "@loop", [ 0.3, "@hat-note", 0.4, "@wait" ],
+    "@loop", [ 550, 0.5, "@pluck-note", 0.6, "@wait" ],
+    "@loop", [ 330, 0.4, "@pluck-note", 0.2, "@wait" ],
+    "@loop", [ 110, 0.6, "@pluck-note", 12, "@wait" ]
+]
+  </pre>
+    <button class="button-secondary" onclick="vm.run(['@stop-all'], false)">Stop</button>
+
+    <p>And to run something in parallel without looping it, just use @fork []:</p>
+
+    <pre class="runnable">
+[
+    "@loop", [
+        "@kick",
+        "@fork", [
+            0.25, "@wait",
+            550, 1, "@pluck-note",
+            0.33, "@wait",
+            660, 1, "@pluck-note"
+        ],
+        1, "@wait"
+    ]
+]
+  </pre>
+    <button class="button-secondary" onclick="vm.run(['@stop-all'], false)">Stop</button>
+
+    <p>This is also handy for setting up loops with different start times:</p>
+
+    <pre class="runnable">
+[
+    "@loop", ["@kick", 1, "@wait"],
+    "@fork", [0.5, "@wait",
+        "@loop", ["@hat", 1, "@wait"]
+    ]
+]
+  </pre>
+    <button class="button-secondary" onclick="vm.run(['@stop-all'], false)">Stop</button>
+
+    <h2>Expressions</h2>
+
+    <p>Anywhere that a number would go, you can insert an expression. Here are some fun expressions.</p>
+
+    <p>Here's picking a value at random from a list, instead of giving the freq and amp values as numbers:</p>
+
+    <pre class="runnable">
+  [
+      "@loop", [
+          ["@quote", [330, 440, 550, 660], "@pick"],
+          ["@quote", [1, 0.7, 0.4], "@pick"],
+          "@pluck-note",
+          0.25, "@wait"
+      ]
+  ]
+  </pre>
+    <button class="button-secondary" onclick="vm.run(['@stop-all'], false)">Stop</button>
+
+    <p>Here's alternating between a set of values in a list, one at a time:</p>
+
+    <pre class="runnable">
+  [
+      "@loop", [
+          ["@quote", [330, 440, 550, 660], "@iter"],
+          ["@quote", [1, 0.7, 0.4], "@iter"],
+          "@pluck-note",
+          0.25, "@wait"
+      ]
+  ]
+  </pre>
+    <button class="button-secondary" onclick="vm.run(['@stop-all'], false)">Stop</button>
+
+    <p>Here's way to set the probability of something happening. Note that two lists have to be given after the "@chance"; either
+      the first is run (if the chance happens), else the other one will be run.</p>
+
+    <pre class="runnable">
+  [
+      "@loop", [
+          "@fork", [
+              0.2,
+              "@chance",
+              ["@snare"],
+              ["@tom"]
+          ],
+          "@hat", 0.25, "@wait"
+      ]
+  ]
+  </pre>
+    <button class="button-secondary" onclick="vm.run(['@stop-all'], false)">Stop</button>
+
+    <p>If you don't care about the 'else' case, just put an empty list [] or null. But you must put something, or else the virtual
+      machine will get corrupted, and who knows what might happen.</p>
+
+    <pre class="runnable">
+  [
+      "@loop", [
+          "@fork", [
+              0.1,
+              "@chance",
+              ["@snare"],
+              []
+          ],
+          "@hat", 0.25, "@wait"
+      ]
+  ]
+  </pre>
+    <button class="button-secondary" onclick="vm.run(['@stop-all'], false)">Stop</button>
+
+    <p>Another way of getting some randomness is to use the @rand (which generates a number between 0 and 1), @srand (which
+      generates a number between -1 and 1), and n,@randi (which generates a number between 0 and n-1):</p>
+
+    <pre class="runnable">
+  [
+      "@loop", [
+          "@rand", "amp", "@set",
+          "@pluck",
+          0.25, "@wait"
+      ]
+  ]
+  </pre>
+    <button class="button-secondary" onclick="vm.run(['@stop-all'], false)">Stop</button>
+
+    <pre class="runnable">
+  [
+      "@loop", [
+          "@pluck",
+          [3, "@randi"], "@wait"
+      ]
+  ]
+  </pre>
+    <button class="button-secondary" onclick="vm.run(['@stop-all'], false)">Stop</button>
+
+    <p>There are several basic math functions that can be used to map numbers into useful ranges. Note that most math functions
+      require the arguments first, e.g. use [a,b,@+] to add a and b:</p>
+
+    <pre class="runnable">
+  [
+      "@loop", [
+          [[[4, "@randi"], 1, "@+"], 110, "@*"], "freq", "@set",
+          "@pluck",
+          0.25, "@wait"
+      ]
+  ]
+  </pre>
+    <pre class="runnable">
+  [
+      "@loop", [
+          [["@srand", 10, "@*"], 110, "@+"], "freq", "@set",
+          "@pluck",
+          0.25, "@wait"
+      ]
+  ]
+  </pre>
+    <button class="button-secondary" onclick="vm.run(['@stop-all'], false)">Stop</button>
+
+    <h2>Get, set, and let</h2>
+
+    <p><b>FIXME: this is no longer true. At this moment you can only use
+    @set, @let or @get preceding the variable name</b></p>
+
+    <p>The @set-freq etc. are really just examples of creating named values ("variables") that can be re-used again later. Actually
+      you can use @set-anything to create whatever variables you like, and use @get-anything to retrieve them. Mainly this
+      is useful when you want to re-use something a few times:
+    </p>
+
+    <pre class="runnable">
+[
+    "@loop", [
+        [[[4, "@randi"], 2, "@+"], 110, "@*"], "fq", "@set",
+        "fq", "@get", 0.6, "@pluck-note",
+        ["fq", "@get", 1.5, "@mul"], 0.6, "@pluck-note",
+        0.25, "@wait"
+    ]
+]
+  </pre>
+    <button class="button-secondary" onclick="vm.run(['@stop-all'], false)">Stop</button>
+
+    <p>By default @set-anything will apply globally, so you can modulate a parameter from one loop while using it in another:</p>
+
+    <pre class="runnable">
+[
+    "@loop", [
+        [[[4, "@randi"], 2, "@+"], 110, "@*"], "fq", "@set",
+        1, "@wait"
+    ],
+    "@loop", [
+        "fq", "@get", 0.6, "@pluck-note",
+        ["fq", "@get", 1.5, "@mul"], 0.6, "@pluck-note",
+        0.25, "@wait"
+    ]
+]
+  </pre>
+    <button class="button-secondary" onclick="vm.run(['@stop-all'], false)">Stop</button>
+
+    <p>If globalism isn't what you care for, you can make a name "local" to a particular loop by using @let-anything. Once you
+      have @let- a variable in a particular @loop (or @fork) pattern, it will remain local to that pattern. Generally, use
+      @let if you want some value that is only used within a pattern, and @set if you want something global.</p>
+
+    <pre class="runnable">
+[
+    "@loop", [
+        [[[4, "@randi"], 1, "@+"], 110, "@mul"], "fq", "@let",
+        "fq", "@get", 0.6, "@pluck-note",
+        ["fq", "@get", 1.5, "@mul"], 0.6, "@pluck-note",
+        0.25, "@wait"
+    ],
+    "@loop", [
+        [[[4, "@randi"], 5, "@+"], 110, "@mul"], "fq", "@let",
+        "fq", "@get", 1, "@pluck-note",
+        ["fq", "@get", 1.5, "@mul"], 0.6, "@pluck-note",
+        0.25, "@wait"
+    ]
+]
+  </pre>
+    <button class="button-secondary" onclick="vm.run(['@stop-all'], false)">Stop</button>
+
+    <p>One use for this is to repeatedly modify a value, such as for a counter, or a decay:</p>
+
+    <pre class="runnable">
+[
+    "@loop", [
+        1, "a", "@let",
+        8, "@repeat", [
+            "a", "@get", "@snare-note",
+            0.25, "@wait",
+            "a", "@get", 0.6, "@*", "a", "@set"
+        ]
+    ]
+]
+  </pre>
+    <button class="button-secondary" onclick="vm.run(['@stop-all'], false)">Stop</button>
+
+    <p>The only thing special about @set-freq is that the name "freq" is used by @pluck. That is, @pluck is equivalent to: ["@get-freq",
+      "@get-amp", "@pluck-note"]. Similarly for @set-amp etc.</p>
+
+    <h2>Independently parallel</h2>
+
+    <p>Say you want to be able to launch a loop, then let it keep running while you launch another. And say you want to redefine
+      it while it plays, or stop it. To do that you need to name it. We can do that via "@spawn".</p>
+
+    <pre class="runnable">[
+    "foo", "@spawn", [220, 0.5, "@pluck-note", 0.50, "@wait"],
+    "bar", "@spawn", [330, 0.5, "@pluck-note", 0.75, "@wait"],
+    3, "@wait",
+    "foo", "@spawn", [110, 0.5, "@pluck-note", 1, "@wait"]
+]</pre>
+
+    <pre class="runnable">[
+    "foo", "@spawn", [440, 0.5, "@pluck-note", 0.5, "@wait"]
+]</pre>
+
+    <pre class="runnable">[
+    "bar", "@spawn", [110, 0.5, "@pluck-note", 1, "@wait"]
+]</pre>
+
+    <p>Click to change the "foo" part:</p>
+    <pre class="runnable">["foo", "@stop"]
+</pre>
+
+    <pre class="runnable">[
+    "bar", "@stop"
+]  </pre>
+    <button class="button-secondary" onclick="vm.run(['@stop-all'], false)">Stop</button>
+
+    <pre class="runnable">[
+    "@loop",[
+        "@quote",[0.01,0.2,0.01],"@iter","@hat-note",
+        "@quote",[1,3],"@iter",8,"@div","@wait"
+    ],
+    "@loop",[
+        ["@quote",[14,15,16,17,18],"@iter",44,"@mul"],"freq", "@set",
+        0.1,"amp","@set",
+        "@pluck",
+        "@quote",[5,7],"@pick",32,"@div","@wait"
+    ],
+    "@loop",[
+        ["@quote",[16,6,15,5,10,4,12],"@iter",44,"@mul"],"freq", "@set",
+        1,"@quote",[2,3,5,6,5,6,5],"@pick","@div","amp", "@set",
+        "@pluck",
+        "@quote",[5,1,9,1],"@iter",32,"@div","@wait"
+    ]
+]  </pre>
+    <button class="button-secondary" onclick="vm.run(['@stop-all'], false)">Stop</button>
+
+    <h2>Tempo and rate</h2>
+    <p>There's a global tempo that can be manipulated:</p>
+
+    <pre class="runnable">[
+    0.4,"amp","@set",
+    "@loop",[
+      ["@quote",[120, 80, 60],"@iter"],"@set-bpm",4,"@wait"
+    ],
+    "@loop",[
+        ["@quote",[14,15,16,17,18],"@iter",44,"@mul"],"freq","@set",
+        "@pluck", 0.25, "@wait"
+    ],0.125,"@wait",
+    "@loop",[
+        ["@quote",[32,34,36,24,30],"@iter",44,"@mul"],"freq","@set",
+        "@pluck", 0.25, "@wait"
+    ]
+]</pre>
+    <button class="button-secondary" onclick="vm.run(['@stop-all'], false)">Stop</button>
+
+    <p>You can scale the current rate:</p>
+    <pre class="runnable">[
+    0.4,"amp","@set",
+    "@loop", [
+      ["@quote",[14,15,16,17,18],"@iter",44,"@mul"],"freq","@set",
+      "@pluck", 0.25, "@wait"
+    ],
+    "@loop", [
+      ["@quote",[14,15,16,17,18],"@iter",66,"@mul"],"freq","@set",
+      "@pluck", 0.25, "@wait", 1.01, "@scale-rate"
+    ]
+]</pre>
+    <button class="button-secondary" onclick="vm.run(['@stop-all'], false)">Stop</button>
+
+    <pre class="runnable">
+  </pre>
+    <button class="button-secondary" onclick="vm.run(['@stop-all'], false)">Stop</button>
+
+  </article>
+  <script src="js/jquery.min.js"></script>
+  <script src="js/gibberish.min.js"></script>
+  <script src="dist/ash-vm.js"></script>
+  <script src="js/highlight.min.js"></script>
+  <script src="js/hljs/javascript.min.js"></script>
+
+
+  <script>
+    const vm = AshVM.initGibberish(Gibberish, { bpm: 100 })
+    console.log('Installed commands', Object.keys(vm.commands).sort())
+
+    $('.play').click(e => {
+      const text = $(e.target).prev().text()
+      const program = JSON.parse(text)
+      console.log('RUN', program)
+      vm.run(program)
+    })
+    hljs.initHighlightingOnLoad();
+  </script>
+</body>
+
+</html>

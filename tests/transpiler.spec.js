@@ -1,4 +1,4 @@
-import transpiler from "../src/transpiler";
+import transpiler, { when } from "../src/transpiler/transpiler";
 
 describe("transpiler", () => {
   it("preserves code by default", () => {
@@ -10,10 +10,24 @@ describe("transpiler", () => {
     expect(transpiler()("@op")).toEqual("@op");
   });
 
-  it("accept a transpiler rule", () => {
-    const rule = (output, op) => output.push(op.toUpperCase());
-    rule.test = op => typeof op === "string";
-    const transpile = transpiler([rule]);
+  it("accepts a transform function", () => {
+    const transform = (output, op) => {
+      if (typeof op === "string") {
+        output.push(op.toUpperCase());
+        return output;
+      } else {
+        return null;
+      }
+    };
+    const transpile = transpiler(transform);
+    expect(transpile(["a", [1, "b"]])).toEqual(["A", [1, "B"]]);
+  });
+
+  it("decorates with a predicate", () => {
+    const transform = when(op => typeof op === "string")((output, op) =>
+      output.push(op.toUpperCase())
+    );
+    const transpile = transpiler(transform);
     expect(transpile(["a", [1, "b"]])).toEqual(["A", [1, "B"]]);
   });
 });

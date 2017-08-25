@@ -108,7 +108,7 @@ export function scheduler(env = {}, start = clock()) {
     const endsAt = schedule.time + duration;
     let proc = queue.pop();
     while (proc && proc.time < endsAt && limit--) {
-      proc.exec(schedule.env, endsAt);
+      proc.exec(env, endsAt);
       if (proc.operations.length) schedule(proc);
       proc = queue.pop();
     }
@@ -150,21 +150,6 @@ export default function vm(env, clock, transpile) {
         else schedule.time = Math.floor(schedule.time + 1);
       }
       return schedule.fork(null, transpiled);
-    },
-
-    debug: () => {
-      const lib = env.lib;
-      const names = Object.keys(lib);
-      names.forEach(name => {
-        const fn = lib[name];
-        lib[name] = (proc, env) => {
-          const next = proc.stack[proc.stack.length - 1];
-          const next2 = proc.stack[proc.stack.length - 2];
-          console.log("at", proc.time, name, next, next2);
-          fn(proc, env);
-        };
-      });
-      return names;
     }
   };
 }
