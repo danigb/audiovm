@@ -40,7 +40,7 @@ export default {
    * Stop current process
    */
   "@exit": proc => {
-    proc.operations.length = 0;
+    proc.stop();
   },
 
   /**
@@ -86,6 +86,7 @@ export default {
    * @example
    * [['@kick', '@wait-1'], 'kick', '@spawn']
    */
+  // en el nuevo modelo fork crea un proceso nuevo, no un child process
   "@spawn": (proc, env) => {
     if (env.schedule) {
       const id = proc.stack.pop();

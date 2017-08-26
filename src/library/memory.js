@@ -42,9 +42,9 @@ export default {
    * @example
    * ['pluck', '@call']
    */
-  "@call": (proc, env) => {
+  "@call": proc => {
     const name = proc.stack.pop();
-    proc.call(env, "@" + name);
+    proc.load(["@" + name]);
   },
 
   /**

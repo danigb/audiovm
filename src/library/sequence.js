@@ -13,7 +13,7 @@ export default {
     const array = proc.stack[proc.stack.length - 1];
     if (array.length) {
       const next = array.shift();
-      proc.load([next, ...fn, fn, "@each"]);
+      proc.load([next, fn, "@eval", fn, "@each"]);
     }
   }
 };

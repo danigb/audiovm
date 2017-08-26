@@ -1,5 +1,4 @@
 import VM from "./vm";
-import macros from "./macros";
 import lib from "./library";
 
 /**
@@ -38,7 +37,7 @@ export default function init(Gibberish) {
     });
   };
 
-  return VM(env, clock, macros);
+  return VM(env, clock);
 }
 
 function createLibrary(Gibberish) {
@@ -54,7 +53,8 @@ function createLibrary(Gibberish) {
     };
     lib["@" + name + ":note"] = proc => {
       const inst = get(name);
-      inst.freq = proc.stack.pop();
+      const param = proc.stack.pop();
+      inst[param] = proc.stack.pop();
       inst.note();
     };
     lib["@" + name + ":set"] = proc => {

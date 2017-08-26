@@ -11,19 +11,22 @@ const logger = (output = []) => {
 
 describe("arithmetic", () => {
   test("@sub", () => {
-    const proc = process().load([10, 4, "@sub"]).exec(env);
+    const proc = process().load([10, 4, "@sub"]);
+    proc.exec(env);
     expect(proc.stack).toEqual([6]);
   });
 
   test("@wrap", () => {
-    const proc = process().load([5, -2, "@wrap"]).exec(env);
+    const proc = process().load([5, -2, "@wrap"]);
+    proc.exec(env);
     expect(proc.stack).toEqual([-1]);
   });
 });
 
 describe("logic operations", () => {
   test("@>", () => {
-    const proc = process().load([3, 4, "@>"]).exec(env);
+    const proc = process().load([3, 4, "@>"]);
+    proc.exec(env);
     expect(proc.stack).toEqual([false]);
   });
 

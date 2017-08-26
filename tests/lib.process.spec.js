@@ -7,7 +7,8 @@ const env = { lib: proclib };
 
 describe("process operations", () => {
   test("@wait", () => {
-    const proc = process({ time: 2 }).load([1, "@wait"]).exec(env);
+    const proc = process(null, 2).load([1, "@wait"]);
+    proc.exec(env);
     expect(proc.time).toEqual(3);
   });
 

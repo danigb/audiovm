@@ -36,27 +36,26 @@
       {
         title: 'Hello World',
         desc: 'Play a note in a loop',
-        program: [["@pluck", 0.5, "@wait"], "@loop"]
+        program: [">>@loop", ['@pluck', 0.5, '@wait']]
       },
       {
         title: 'Kick vs Snare',
         desc: 'The simplest rythmic pattern',
-        program: [["@kick", 0.5, "@wait", "@snare", 0.5, "@wait"], 4, "@repeat"]
+        program: [">>@repeat", 4, ['@kick', 0.5, '@wait', '@snare', 0.5, '@wait']]
       },
       {
-        title: 'C major scale signal style',
-        desc: 'Play an ascending major scale using @iter',
-        program: ["major", "A3", 8, "@scale", ["@iter", "@mtof", "freq", "@pluck:note", 0.4, "@wait"], 15, "repeat@"]
-      },
-      {
-        title: 'C major scale functional style',
-        desc: 'Play an ascending major scale using @each',
-        program: ["major", "A3", 15, "@scale", ["@mtof", "freq", "@pluck:note", 0.4, "@wait"], "@each"]
+        title: 'C major scale',
+        desc: 'Play an ascending major scale',
+        program: [">>@each", ["@mtof", "freq", "@pluck:note", "@wait-04"],
+          "@scale", 15, "A3", "major"]
       },
       {
         title: 'Random minor scale',
         desc: 'Pick notes randomly from a scale',
-        program: [["minor", "C3", 15, "@scale", "notes", "@let"], "@eval", ["notes", "@get", "@pick", "@mtof", "@pluck:note", 0.3, "@wait"], "@loop"]
+        program: [
+          '@>>', '@loop', ['@get-notes', '@pick', '@mtof', '@pluck:note', '@wait-0.3'],
+          '@eval', ['minor', 'C3', 15, '@scale', '@let-notes'],
+        ],
       }
     ]
 

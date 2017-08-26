@@ -3,6 +3,9 @@ import sequence from "../src/library/sequence";
 import { logger } from "./debug";
 
 const env = { lib: sequence };
+env.lib["@eval"] = proc => {
+  proc.load(proc.stack.pop());
+};
 
 describe("sequence", () => {
   test("@each", () => {

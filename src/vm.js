@@ -1,47 +1,44 @@
 let nextId = 1;
 
 /**
- * Create a process
+ * Create a lightweight process
+ * 
  * @private
  * @param {Object} props
  * @return {Process} 
  */
-export function process(props) {
+export function process(parent = null, time = 0, context = {}) {
   const proc = {
     id: "" + nextId++,
-    time: 0,
-    context: {},
-    stack: [],
-    operations: []
+    parent,
+    time,
+    context,
+    stack: []
   };
-  Object.assign(proc, props);
+  const operations = [];
+
+  const noop = name => () => console.warning(name + " is not in library");
+  const call = (env, name) => (env.lib[name] || noop(name))(proc, env);
 
   proc.exec = (env, maxTime = Infinity, maxOps = 1000) => {
-    while (proc.time < maxTime && --maxOps && proc.operations.length) {
-      const op = proc.operations.pop();
+    while (proc.time < maxTime && --maxOps && operations.length) {
+      const op = operations.pop();
       if (typeof op === "function") op(proc, env);
-      else if (typeof op === "string" && op[0] === "@") proc.call(env, op);
+      else if (typeof op === "string" && op[0] === "@") call(env, op);
       else proc.stack.push(op);
     }
     if (!maxOps) throw Error(`[proc:${proc.id} - Loop limit reached`);
-    return proc;
+    return operations.length;
   };
+
+  proc.stop = () => (operations.length = 0);
 
   proc.load = program => {
     let i = program.length;
     while (i--) {
-      proc.operations.push(program[i]);
+      operations.push(program[i]);
     }
     return proc;
-  };
-
-  proc.call = (env, name) => {
-    const fn = env.lib[name];
-    if (typeof fn === "function") {
-      fn(proc, env);
-    } else {
-      console.warn(name + " is not a function.");
-    }
   };
 
   return proc;
@@ -73,6 +70,7 @@ export const clock = (interval = 0.1) => resume => {
  */
 export function scheduler(env = {}, start = clock()) {
   const queue = [];
+  let running = false;
 
   function schedule(proc) {
     let i = queue.length - 1;
@@ -80,6 +78,10 @@ export function scheduler(env = {}, start = clock()) {
       i--;
     }
     queue.splice(i + 1, 0, proc);
+    if (!running) {
+      //env.bus("start", proc)
+      running = true;
+    }
     return proc;
   }
   env.schedule = schedule;
@@ -87,7 +89,7 @@ export function scheduler(env = {}, start = clock()) {
   schedule.time = 0;
   schedule.env = env;
   schedule.fork = (parent, program) => {
-    return schedule(process({ parent, time: schedule.time }).load(program));
+    return schedule(process(parent, schedule.time)).load(program);
   };
   schedule.count = () => queue.length;
   schedule.processes = () => queue.slice();
@@ -108,8 +110,7 @@ export function scheduler(env = {}, start = clock()) {
     const endsAt = schedule.time + duration;
     let proc = queue.pop();
     while (proc && proc.time < endsAt && limit--) {
-      proc.exec(env, endsAt);
-      if (proc.operations.length) schedule(proc);
+      if (proc.exec(env, endsAt)) schedule(proc);
       proc = queue.pop();
     }
     if (proc) queue.push(proc);
@@ -128,14 +129,12 @@ export function scheduler(env = {}, start = clock()) {
  * @param [Function] transpile - an optional transpile function
  * @return {VM} the vm object
  */
-export default function vm(env, clock, transpile) {
+export default function vm(env, clock) {
   const schedule = scheduler(env, clock);
-  if (!transpile) transpile = program => program;
 
   return {
     env,
     schedule,
-    transpile,
     /**
      * Run a program
      * @function
@@ -144,12 +143,11 @@ export default function vm(env, clock, transpile) {
      * @param {array} program - the program to run
      */
     run: (program, sync = true) => {
-      const transpiled = transpile(program);
       if (sync) {
-        if (schedule.count()) transpiled.unshift("@sync");
+        if (schedule.count()) program.unshift("@sync");
         else schedule.time = Math.floor(schedule.time + 1);
       }
-      return schedule.fork(null, transpiled);
+      return schedule.fork(null, program);
     }
   };
 }
