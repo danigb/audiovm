@@ -6,14 +6,22 @@
   "jsnext:main": "src/index.js",
   "module": "src/index.js",
   "repository": "danigb/audiovm",
-  "keywords": ["audio", "virtual", "machine", "gibberish"],
+  "keywords": [
+    "audio",
+    "virtual",
+    "machine",
+    "gibberish"
+  ],
   "author": "danigb",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/danigb/audiovm/issues"
   },
   "dependencies": {
-    "microtonal": "^1.0.0"
+    "fastpriorityqueue": "^0.3.1",
+    "microtonal": "^1.0.0",
+    "qheap": "^1.4.0",
+    "tiny-emitter": "^2.0.2"
   },
   "scripts": {
     "test": "jest --coverage --no-cache",
@@ -30,12 +38,15 @@
     "prettier": "^1.5.3",
     "rollup": "^0.47.6",
     "rollup-plugin-babel": "^3.0.2",
+    "rollup-plugin-commonjs": "^8.2.0",
     "rollup-plugin-filesize": "^1.4.2",
     "rollup-plugin-node-resolve": "^3.0.0",
     "rollup-plugin-uglify": "^2.0.1",
     "rollup-watch": "^4.3.1"
   },
   "jest": {
-    "transformIgnorePatterns": ["<rootDir>/node_modules/(?!microtonal)"]
+    "transformIgnorePatterns": [
+      "<rootDir>/node_modules/(?!microtonal)"
+    ]
   }
 }

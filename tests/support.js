@@ -10,11 +10,13 @@ export const wait = proc => (proc.time += proc.stack.pop());
 
 export const noop = () => null;
 
-export const env = () => {
+export const createScope = () => {
   const log = logger();
 
   return {
     output: log.output,
-    lib: { "@log": log, "@wait": wait, "@noop": noop }
+    "@log": log,
+    "@wait": wait,
+    "@noop": noop
   };
 };

@@ -1,4 +1,4 @@
-import compile from "../src/transpiler/macros";
+import compile from "../../src/transpiler/macros";
 
 describe("macros", () => {
   it("## comments: skip comments", () => {

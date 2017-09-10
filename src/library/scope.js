@@ -4,50 +4,6 @@
  */
 export default {
   /**
-   * Evaluate the program from the stack
-   * @param {array} program
-   * 
-   * @example
-   * [['minor', 'C3', 8, '@scale', '@let-Scale'], '@eval', '@get-Scale']
-   */
-  "@eval": proc => {
-    const program = proc.stack.pop();
-    proc.load(program);
-  },
-
-  /**
-   * Get the next element from the stack and log it
-   * @example
-   * [60, '@mtof', '@log']
-   */
-  "@log": proc => {
-    const value = proc.stack.pop();
-    console.log(proc.time, value);
-  },
-
-  /**
-   * Duplicate the next value of the stack
-   * @example
-   * ['Hi', '@dup', '@log', '@log'] 
-   */
-  "@dup": proc => {
-    const value = proc.stack[proc.stack.length - 1];
-    proc.stack.push(value);
-  },
-
-  /**
-   * Invoke a function
-   * @param [string] name - the function name
-   * 
-   * @example
-   * ['pluck', '@call']
-   */
-  "@call": proc => {
-    const name = proc.stack.pop();
-    proc.load(["@" + name]);
-  },
-
-  /**
    * __@defn__: define a function
    * @param [array] function body
    * @param [string] name of the function
@@ -58,7 +14,7 @@ export default {
   "@defn": (proc, env) => {
     const name = "@" + proc.stack.pop();
     const program = proc.stack.pop();
-    env.lib[name] = proc => proc.load(program);
+    env.lib[name] = proc => proc.run(program);
   },
 
   /**

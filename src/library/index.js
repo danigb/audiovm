@@ -1,8 +1,18 @@
-import memory from "./memory";
+import scope from "./scope";
 import alu from "./alu";
 import process from "./process";
-import sequence from "./sequence";
+import repetition from "./repetition";
 import random from "./random";
 import music from "./music";
+import time from "./time";
 
-export default Object.assign({}, memory, alu, process, sequence, random, music);
+export default Object.assign(
+  {},
+  scope,
+  alu,
+  process,
+  repetition,
+  random,
+  music,
+  time
+);

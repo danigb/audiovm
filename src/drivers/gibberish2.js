@@ -1,5 +1,14 @@
-import VM from "./vm";
-import lib from "./library";
+import { resume } from "../vm";
+
+const init = Gibberish => {
+  if (!Gibberish && typeof window !== undefined && window.Gibberish) {
+    Gibberish = window.Gibberish;
+  }
+  if (!Gibberish.context) {
+    Gibberish.init();
+  }
+  return Gibberish;
+};
 
 /**
  * Create a `run` function using the Gibberish library
@@ -17,56 +26,49 @@ import lib from "./library";
  * import { initGibberish } from 'audiovm'
  * const run = initGibberish();
  */
-export default function init(Gibberish) {
-  if (!Gibberish && typeof window !== undefined && window.Gibberish) {
-    Gibberish = window.Gibberish;
-  }
-  if (!Gibberish.context) {
-    Gibberish.init();
-  }
+export default (vm, Gibberish) => {
+  Gibberish = init(Gibberish);
+  const instruments = createRepository(Gibberish);
+  updateScope(instruments, vm.scope);
 
-  const env = {
-    Gibberish,
-    lib: Object.assign({}, lib, createLibrary(Gibberish))
-  };
+  const bpm2bpa = 1 / Gibberish.context.sampleRate;
+  Gibberish.sequencers.push({
+    tick: () => resume(bpm2bpa, vm)
+  });
 
-  const clock = resume => {
-    const bpm2bpa = 1 / Gibberish.context.sampleRate;
-    Gibberish.sequencers.push({
-      tick: () => resume(bpm2bpa)
-    });
-  };
+  return vm;
+};
 
-  return VM(env, clock);
-}
-
-function createLibrary(Gibberish) {
-  const create = factories(Gibberish);
-  const names = Object.keys(create);
-  const cache = [];
-  const get = name => cache[name] || (cache[name] = create[name]());
-
-  return names.reduce((lib, name) => {
+function updateScope(instruments, scope) {
+  return instruments.names.reduce((lib, name) => {
     lib["@" + name] = () => {
-      const inst = get(name);
+      const inst = instruments.get(name);
       inst.note();
     };
     lib["@" + name + ":note"] = proc => {
-      const inst = get(name);
+      const inst = instruments.get(name);
       const param = proc.stack.pop();
       inst[param] = proc.stack.pop();
       inst.note();
     };
     lib["@" + name + ":set"] = proc => {
-      const inst = get(name);
+      const inst = instruments.get(name);
       const key = proc.stack.pop();
       inst[key] = proc.stack.pop();
     };
     return lib;
-  }, {});
+  }, scope);
 }
 
-function factories(Gibberish) {
+function createRepository(Gibberish) {
+  const factories = createFactories(Gibberish);
+  const names = Object.keys(factories);
+  const cache = [];
+  const get = name => cache[name] || (cache[name] = factories[name]());
+  return { get, names, cache };
+}
+
+function createFactories(Gibberish) {
   return {
     kick: () => new Gibberish.Kick({ decay: 0.2, freq: 80 }).connect(),
     snare: () => new Gibberish.Snare({ amp: 0.3, snappy: 1.5 }).connect(),

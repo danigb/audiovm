@@ -2,6 +2,7 @@
  * Arithmetic and logic operations
  * @module alu
  */
+import { load } from "../process";
 
 // module that works with negative numbers
 export const wrap = (a, b) => (a % b + b) % b;
@@ -76,8 +77,8 @@ export default {
     const cond = proc.stack.pop();
     const falseProgr = proc.stack.pop();
     const trueProgr = proc.stack.pop();
-    if (cond) proc.load(trueProgr);
-    else proc.load(falseProgr);
+    if (cond) load(trueProgr, proc);
+    else load(falseProgr, proc);
   },
 
   /** 

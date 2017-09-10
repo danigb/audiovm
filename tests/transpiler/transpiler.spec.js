@@ -1,4 +1,4 @@
-import transpiler, { when } from "../src/transpiler/transpiler";
+import transpiler, { when } from "../../src/transpiler/transpiler";
 
 describe("transpiler", () => {
   it("preserves code by default", () => {

@@ -1,3 +1,5 @@
+import { load } from "../process";
+import { stop } from "../program";
 /**
  * Process operations
  * @module process
@@ -5,68 +7,46 @@
 
 export default {
   /**
-   * __@wait__: wait
-   * @param [number] delay - the time to wait in beats
+   * Evaluate the program from the stack
+   * @param {array} program
    * 
    * @example
-   * [0.5, '@wait']
+   * [['minor', 'C3', 8, '@scale', '@let-Scale'], '@eval', '@get-Scale']
    */
-  "@wait": proc => {
-    const delay = proc.stack.pop();
-    proc.time += delay;
+  "@eval": proc => {
+    const program = proc.stack.pop();
+    load(program, proc);
   },
-
   /**
-   * Wait until next beat
+   * Invoke a function
+   * @param [string] name - the function name
    * 
    * @example
-   * ['@sync', '@kick']
+   * ['pluck', '@call']
    */
-  "@sync": proc => {
-    const delay = Math.floor(proc.time) + 1 - proc.time;
-    if (delay < 0.99) proc.time = Math.floor(proc.time + 1);
+  "@call": proc => {
+    const name = proc.stack.pop();
+    proc.run(["@" + name]);
   },
 
   /**
-   * Set the id of this process
-   * @param [string] the id of this process
-   */
-  "@id": proc => {
-    const id = proc.stack.pop();
-    proc.id = id;
-  },
-
-  /**
-   * Stop current process
-   */
-  "@exit": proc => {
-    proc.stop();
-  },
-
-  /**
-   * Repeat a number of times
-   * @param [array] the program to repeat
-   * @param [number] the number of times
-   */
-  "@repeat": proc => {
-    const times = proc.stack.pop();
-    const program = proc.stack.pop();
-    if (times > 1) {
-      proc.load([program, times - 1, "@repeat"]);
-    }
-    proc.load(program);
-  },
-
-  /**
-   * Repeat a program forever
-   * @param [array] the program to repeat forever
+   * Get the next element from the stack and log it
    * @example
-   * [[1, '@wait', '@pluck'], '@forever']
+   * [60, '@mtof', '@log']
    */
-  "@forever": proc => {
-    const program = proc.stack.pop();
-    proc.load([program, "@forever"]);
-    proc.load(program);
+  "@log": proc => {
+    const value = proc.stack.pop();
+    console.log(proc.time, value);
+  },
+
+  /**
+   * Duplicate the next value of the stack
+   * @example
+   * ['Hi', '@dup', '@log', '@log'] 
+   */
+  "@dup": proc => {
+    const value = proc.stack[proc.stack.length - 1];
+    proc.stack.push(value);
   },
 
   /**
@@ -86,7 +66,6 @@ export default {
    * @example
    * [['@kick', '@wait-1'], 'kick', '@spawn']
    */
-  // en el nuevo modelo fork crea un proceso nuevo, no un child process
   "@spawn": (proc, env) => {
     if (env.schedule) {
       const id = proc.stack.pop();
@@ -97,34 +76,12 @@ export default {
   },
 
   /**
-   * Start a new child process that repeats forever
-   */
-  "@loop": (proc, env) => {
-    if (env.schedule) {
-      const program = proc.stack.pop();
-      env.schedule.fork(proc, [program, "@forever"]);
-    }
-  },
-
-  /**
-   * Stop all processes
-   * 
-   */
-  "@stop:all": (proc, env) => {
-    if (env.schedule) {
-      env.schedule.removeAll();
-    }
-  },
-
-  /**
    * Stop another process
    * @param [string] the id of the process
    */
-  "@stop": (proc, env) => {
+  "@kill": (proc, vm) => {
     const id = proc.stack.pop();
-    const res = env.schedule.remove(id);
-    console.log("stop", id, res);
-  },
-  "@pause": proc => {},
-  "@resume": proc => {}
+    const program = vm.scope[id];
+    stop(program);
+  }
 };

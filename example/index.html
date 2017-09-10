@@ -29,7 +29,6 @@
   <script src="js/hyperapp.js"></script>
   <script>
     const vm = AudioVM.initGibberish();
-    AudioVM.Debug.debugLibrary(vm.env.lib);
     const { h, app } = hyperapp
 
     const examples = [
@@ -46,7 +45,7 @@
       {
         title: 'C major scale signal style',
         desc: 'Play an ascending major scale using @iter',
-        program: ["major", "A3", 8, "@scale", ["@iter", "@mtof", "freq", "@pluck:note", 0.4, "@wait"], 15, "repeat@"]
+        program: ["major", "A3", 8, "@scale", ["@iter", "@mtof", "freq", "@pluck:note", 0.4, "@wait"], 15, "@repeat"]
       },
       {
         title: 'C major scale functional style',
@@ -60,27 +59,17 @@
       }
     ]
 
-    examples.forEach(example => {
-      example.compiled = AudioVM.Transpile.macros(example.program);
-    })
-
     const print = (example) => JSON.stringify(example)
-    const isRunning = (example) => example.procId !== undefined;
+    const isRunning = (example) => example.proc !== undefined;
 
     const example = (example, actions) => h('div', null, [
       h('h3', {}, example.title),
       h('div', {}, example.desc),
       h('pre', {}, print(example.program)),
-      example.compiledVisible ?
-        h('pre', {}, print(example.compiled)) : null,
       h('input', {
         value: isRunning(example) ? 'Stop' : 'Play', type: 'button',
         onclick: () => actions.togglePlay(example)
       }),
-      h('input', {
-        value: example.compiledVisible ? 'Hide compiled' : 'Show compiled',
-        type: 'button', onclick: () => actions.toggleCompiled(example)
-      })
     ])
 
     app({
@@ -102,17 +91,13 @@
         },
         togglePlay: (state, actions, example) => {
           if (isRunning(example)) {
-            vm.run([example.procId, '@stop'], false);
-            example.procId = undefined;
+            vm.run([example.proc.id, '@kill'], false);
+            example.proc = undefined;
           } else {
-            example.procId = vm.run(example.compiled).id;
+            example.proc = vm.run(example.program);
           }
           return state;
         },
-        toggleCompiled: (state, actions, example) => {
-          example.compiledVisible = !example.compiledVisible;
-          return state;
-        }
       },
       events: {
         load: () => {
